@@ -150,31 +150,30 @@ class Reservation
      * Update reservation status.
      */
     public function updateStatus(
-        int $reservationId,
-        string $status
-    ): bool {
-        $allowedStatuses = [
-            'pending',
-            'approved',
-            'rejected',
-            'cancelled'
-        ];
+    int $reservationId,
+    string $status
+): bool {
+    $allowedStatuses = [
+        'pending',
+        'confirmed',
+        'cancelled'
+    ];
 
-        if (!in_array($status, $allowedStatuses, true)) {
-            return false;
-        }
-
-        $stmt = $this->db->prepare("
-            UPDATE reservations
-            SET status = ?
-            WHERE id = ?
-        ");
-
-        $stmt->execute([
-            $status,
-            $reservationId
-        ]);
-
-        return $stmt->rowCount() > 0;
+    if (!in_array($status, $allowedStatuses, true)) {
+        return false;
     }
+
+    $stmt = $this->db->prepare("
+        UPDATE reservations
+        SET status = ?
+        WHERE id = ?
+    ");
+
+    $stmt->execute([
+        $status,
+        $reservationId
+    ]);
+
+    return $stmt->rowCount() > 0;
+}
 }

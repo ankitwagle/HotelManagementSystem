@@ -1,4 +1,3 @@
-
 <?php
 
 require_once __DIR__ . '/../models/Reservation.php';
@@ -20,6 +19,13 @@ class ReservationController
         int $guests,
         string $specialRequests = ''
     ): array {
+
+        if ($userId <= 0) {
+            return [
+                'success' => false,
+                'message' => 'Invalid user.'
+            ];
+        }
 
         if ($roomId <= 0) {
             return [
@@ -49,10 +55,6 @@ class ReservationController
             ];
         }
 
-        /*
-         * Check whether the room is already reserved
-         * for any overlapping dates.
-         */
         if (!$this->reservationModel->isAvailable(
             $roomId,
             $checkIn,
@@ -80,9 +82,6 @@ class ReservationController
         ];
     }
 
-    /**
-     * Cancel a pending reservation belonging to the logged-in user.
-     */
     public function cancel(
         int $reservationId,
         int $userId
@@ -115,31 +114,20 @@ class ReservationController
         ];
     }
 
-    /**
-     * Get all reservations belonging to a user.
-     */
     public function userReservations(int $userId): array
     {
         if ($userId <= 0) {
             return [];
         }
 
-        return $this->reservationModel->getUserReservations(
-            $userId
-        );
+        return $this->reservationModel->getUserReservations($userId);
     }
 
-    /**
-     * Get all reservations for admin.
-     */
     public function allReservations(): array
     {
         return $this->reservationModel->getAllReservations();
     }
 
-    /**
-     * Update reservation status.
-     */
     public function updateStatus(
         int $reservationId,
         string $status
@@ -154,8 +142,7 @@ class ReservationController
 
         $allowedStatuses = [
             'pending',
-            'approved',
-            'rejected',
+            'confirmed',
             'cancelled'
         ];
 
@@ -166,16 +153,49 @@ class ReservationController
             ];
         }
 
-        $success = $this->reservationModel->updateStatus(
-            $reservationId,
-            $status
-        );
+        try {
 
-        return [
-            'success' => $success,
-            'message' => $success
-                ? 'Reservation status updated successfully.'
-                : 'Unable to update reservation status.'
-        ];
+            $success = $this->reservationModel->updateStatus(
+                $reservationId,
+                $status
+            );
+
+            if (!$success) {
+
+                return [
+                    'success' => false,
+                    'message' => 'Unable to update reservation status.'
+                ];
+            }
+
+            if ($status === 'confirmed') {
+
+                return [
+                    'success' => true,
+                    'message' => 'Reservation approved successfully.'
+                ];
+            }
+
+            if ($status === 'cancelled') {
+
+                return [
+                    'success' => true,
+                    'message' => 'Reservation cancelled successfully.'
+                ];
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Reservation status updated successfully.'
+            ];
+
+        } catch (PDOException $e) {
+
+            return [
+                'success' => false,
+                'message' => 'Database error while updating reservation.'
+            ];
+        }
     }
 }
+?>

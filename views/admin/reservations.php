@@ -1,83 +1,55 @@
-
 <?php
 
 require_once __DIR__ . '/../../config/config.php';
-require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../controllers/ReservationController.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-/*
-|--------------------------------------------------------------------------
-| ADMIN ACCESS
-|--------------------------------------------------------------------------
-*/
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-if (!isset($_SESSION['user'])) {
-    header('Location: /login.php');
+    $reservationId = (int) ($_POST['reservation_id'] ?? 0);
+    $action = $_POST['action'] ?? '';
+
+    $controller = new ReservationController();
+
+    if ($reservationId <= 0) {
+
+        $_SESSION['reservation_message'] = 'Invalid reservation.';
+
+    } elseif ($action === 'approve') {
+
+        $result = $controller->updateStatus(
+            $reservationId,
+            'confirmed'
+        );
+
+        $_SESSION['reservation_message'] = $result['message'];
+
+    } elseif ($action === 'cancel') {
+
+        $result = $controller->updateStatus(
+            $reservationId,
+            'cancelled'
+        );
+
+        $_SESSION['reservation_message'] = $result['message'];
+
+    } else {
+
+        $_SESSION['reservation_message'] = 'Invalid reservation action.';
+    }
+
+    header('Location: reservations.php');
     exit;
 }
 
-if (($_SESSION['user']['role'] ?? '') !== 'admin') {
-    http_response_code(403);
-    exit('Access denied. Admin access required.');
-}
+$controller = new ReservationController();
+$reservations = $controller->allReservations();
 
-/*
-|--------------------------------------------------------------------------
-| DATABASE
-|--------------------------------------------------------------------------
-*/
-
-$db = Database::connect();
-
-/*
-|--------------------------------------------------------------------------
-| GET COMPLETE RESERVATION HISTORY
-|--------------------------------------------------------------------------
-|
-| IMPORTANT:
-| We intentionally DO NOT use:
-|
-| WHERE deleted_at IS NULL
-|
-| This means cancelled/soft-deleted reservations remain visible
-| in the admin reservation history.
-|--------------------------------------------------------------------------
-*/
-
-$stmt = $db->query("
-    SELECT
-        r.id,
-        r.user_id,
-        r.room_id,
-        r.check_in,
-        r.check_out,
-        r.guests,
-        r.special_requests,
-        r.status,
-        r.created_at,
-        r.deleted_at,
-
-        u.name AS customer_name,
-        u.email AS customer_email,
-
-        rm.room_type AS room_name,
-        rm.price AS room_price
-
-    FROM reservations r
-
-    LEFT JOIN users u
-        ON r.user_id = u.id
-
-    LEFT JOIN rooms rm
-        ON r.room_id = rm.id
-
-    ORDER BY r.created_at DESC
-");
-
-$reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$message = $_SESSION['reservation_message'] ?? '';
+unset($_SESSION['reservation_message']);
 
 ?>
 
@@ -87,127 +59,261 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <head>
 
-    <meta charset="UTF-8">
+```
+<meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-    <title>
-        All Reservations | LuxeStay Admin
-    </title>
+<title>All Reservations | LuxeStay Admin</title>
 
-    <link
-        rel="stylesheet"
-        href="/public/css/style.css"
-    >
+<link
+    rel="stylesheet"
+    href="../../public/css/style.css"
+>
 
-    <style>
+<style>
 
-        .admin-container {
-            width: 95%;
-            max-width: 1400px;
-            margin: 40px auto;
+    .reservation-page {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 20px 60px;
+    }
+
+    .reservation-header {
+        margin-bottom: 28px;
+    }
+
+    .reservation-header .back-link {
+        display: inline-block;
+        margin-bottom: 22px;
+    }
+
+    .eyebrow {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        color: #9a6b24;
+        margin-bottom: 8px;
+    }
+
+    .reservation-header h1 {
+        margin: 0 0 8px;
+    }
+
+    .reservation-header p {
+        margin: 0;
+    }
+
+    .message {
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        background: #d1e7dd;
+        color: #0f5132;
+        border: 1px solid #badbcc;
+        font-weight: 600;
+    }
+
+    .message-error {
+        background: #f8d7da;
+        color: #842029;
+        border-color: #f1aeb5;
+    }
+
+    .reservation-card {
+        background: #ffffff;
+        border: 1px solid #e4e7ec;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .reservation-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 18px 20px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .reservation-card-header h2 {
+        margin: 0;
+        font-size: 17px;
+    }
+
+    .reservation-count {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 20px;
+        background: #f1f5f9;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 950px;
+    }
+
+    th {
+        background: #f8fafc;
+        color: #475569;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        text-align: left;
+        padding: 13px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        white-space: nowrap;
+    }
+
+    td {
+        padding: 15px 12px;
+        border-bottom: 1px solid #edf0f3;
+        color: #1e293b;
+        font-size: 13px;
+        vertical-align: middle;
+    }
+
+    tbody tr:hover {
+        background: #fafbfc;
+    }
+
+    tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .reservation-id {
+        font-weight: 700;
+        color: #16213e;
+    }
+
+    .customer-name {
+        font-weight: 600;
+    }
+
+    .price {
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .status {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: capitalize;
+        white-space: nowrap;
+    }
+
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-confirmed {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .status-cancelled {
+        background: #f8d7da;
+        color: #842029;
+    }
+
+    .status-completed {
+        background: #cfe2ff;
+        color: #084298;
+    }
+
+    .action-buttons {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .action-buttons form {
+        margin: 0;
+    }
+
+    .btn {
+        border: none;
+        padding: 7px 11px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .btn-approve {
+        background: #198754;
+        color: #ffffff;
+    }
+
+    .btn-approve:hover {
+        background: #157347;
+    }
+
+    .btn-cancel {
+        background: #dc3545;
+        color: #ffffff;
+    }
+
+    .btn-cancel:hover {
+        background: #bb2d3b;
+    }
+
+    .action-complete {
+        color: #198754;
+        font-weight: 700;
+        font-size: 12px;
+    }
+
+    .action-cancelled {
+        color: #842029;
+        font-weight: 700;
+        font-size: 12px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 45px 20px;
+        color: #64748b;
+    }
+
+    footer {
+        margin-top: 40px;
+    }
+
+    @media (max-width: 700px) {
+
+        .reservation-page {
+            padding: 24px 12px 40px;
         }
 
-        .admin-header {
-            margin-bottom: 30px;
+        .reservation-card-header {
+            align-items: flex-start;
+            flex-direction: column;
         }
 
-        .admin-header h1 {
-            margin-bottom: 8px;
-        }
+    }
 
-        .back-link {
-            display: inline-block;
-            margin-bottom: 25px;
-        }
-
-        .history-note {
-            margin-top: 20px;
-            padding: 15px 18px;
-            background: #f5f1e8;
-            border-radius: 8px;
-            color: #5f4a1d;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.08);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1200px;
-        }
-
-        th,
-        td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-
-        th {
-            background: #f7f7f7;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        tr:hover {
-            background: #fafafa;
-        }
-
-        .status {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: capitalize;
-        }
-
-        .status.pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status.approved {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status.rejected {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .status.cancelled {
-            background: #e2e3e5;
-            color: #383d41;
-        }
-
-        .archived {
-            background: #f1f1f1;
-            color: #666;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 50px;
-            color: #777;
-        }
-
-    </style>
+</style>
+```
 
 </head>
 
@@ -215,264 +321,341 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <header>
 
-    <div class="logo">
-        🛏 LuxeStay Admin
-    </div>
+```
+<div class="logo">
+    <h2>LuxeStay</h2>
+    <strong>Admin</strong>
+</div>
 
-    <nav>
+<nav>
 
-        <a href="/views/admin/index.php">
-            Admin Dashboard
-        </a>
+    <a href="index.php">
+        Admin Dashboard
+    </a>
 
-        <a href="/views/admin/reservations.php">
-            All Reservations
-        </a>
+    <a href="reservations.php">
+        All Reservations
+    </a>
 
-        <a href="/views/admin/customers.php">
-            Customers
-        </a>
+    <a href="customers.php">
+        Customers
+    </a>
 
-        <a href="/views/admin/rooms.php">
-            Rooms
-        </a>
+    <a href="rooms.php">
+        Rooms
+    </a>
 
-        <a href="/views/admin/payments.php">
-            Customer Cash Flow
-        </a>
+    <a href="cash-flow.php">
+        Customer Cash Flow
+    </a>
 
-        <a href="/views/admin/reports.php">
-            Reports
-        </a>
+    <a href="reports.php">
+        Reports
+    </a>
 
-        <a href="/index.php">
-            Hotel Home
-        </a>
+    <a href="../../index.php">
+        Hotel Home
+    </a>
 
-        <a href="/logout.php">
-            Logout
-        </a>
+    <a href="../../logout.php">
+        Logout
+    </a>
 
-    </nav>
+</nav>
+```
 
 </header>
 
+<main class="reservation-page">
 
-<main class="admin-container">
+```
+<section class="reservation-header">
 
     <a
         class="back-link"
-        href="/views/admin/index.php"
+        href="index.php"
     >
         ← Back to Admin Dashboard
     </a>
 
+    <div class="eyebrow">
+        LUXESTAY ADMINISTRATION
+    </div>
 
-    <section class="admin-header">
+    <h1>
+        All Reservations
+    </h1>
 
-        <p class="eyebrow">
-            LUXESTAY ADMINISTRATION
-        </p>
+    <p>
+        View and manage all hotel reservations.
+    </p>
 
-        <h1>
-            All Reservations
-        </h1>
+</section>
 
-        <p>
-            View the complete reservation history of the hotel system.
-        </p>
+<?php if ($message !== ''): ?>
 
-        <div class="history-note">
+    <div class="message">
+        <?= htmlspecialchars($message) ?>
+    </div>
 
-            <strong>
-                Reservation History:
-            </strong>
+<?php endif; ?>
 
-            Cancelled or archived reservations remain visible here
-            for reporting and historical records.
+<section class="reservation-card">
 
-        </div>
+    <div class="reservation-card-header">
 
-    </section>
+        <h2>
+            Reservation History
+        </h2>
 
+        <span class="reservation-count">
+            <?= count($reservations) ?>
+            <?= count($reservations) === 1 ? 'reservation' : 'reservations' ?>
+        </span>
 
-    <section class="table-wrapper">
+    </div>
 
-        <?php if (empty($reservations)): ?>
+    <div class="table-wrapper">
 
-            <div class="empty">
+        <table>
 
-                <h2>
-                    No reservations found
-                </h2>
+            <thead>
 
-                <p>
-                    There are currently no reservations in the system.
-                </p>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Email</th>
+                    <th>Room</th>
+                    <th>Check-in</th>
+                    <th>Check-out</th>
+                    <th>Guests</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
 
-            </div>
+            </thead>
 
-        <?php else: ?>
+            <tbody>
 
-            <table>
+            <?php if (empty($reservations)): ?>
 
-                <thead>
+                <tr>
+
+                    <td
+                        colspan="11"
+                        class="empty-state"
+                    >
+                        No reservations found.
+                    </td>
+
+                </tr>
+
+            <?php else: ?>
+
+                <?php foreach ($reservations as $reservation): ?>
+
+                    <?php
+
+                    $status = strtolower(
+                        trim($reservation['status'] ?? 'pending')
+                    );
+
+                    $customerName =
+                        $reservation['customer_name']
+                        ?? $reservation['name']
+                        ?? 'Unknown';
+
+                    $roomName =
+                        $reservation['room_name']
+                        ?? $reservation['room_type']
+                        ?? (
+                            'Room #' .
+                            ($reservation['room_id'] ?? '')
+                        );
+
+                    $price =
+                        $reservation['total_amount']
+                        ?? $reservation['price']
+                        ?? 0;
+
+                    ?>
 
                     <tr>
 
-                        <th>
-                            ID
-                        </th>
+                        <td class="reservation-id">
+                            #<?= (int) $reservation['id'] ?>
+                        </td>
 
-                        <th>
-                            Customer
-                        </th>
+                        <td class="customer-name">
+                            <?= htmlspecialchars($customerName) ?>
+                        </td>
 
-                        <th>
-                            Email
-                        </th>
+                        <td>
+                            <?= htmlspecialchars(
+                                $reservation['email'] ?? ''
+                            ) ?>
+                        </td>
 
-                        <th>
-                            Room
-                        </th>
+                        <td>
+                            <?= htmlspecialchars($roomName) ?>
+                        </td>
 
-                        <th>
-                            Check-in
-                        </th>
+                        <td>
+                            <?= htmlspecialchars(
+                                $reservation['check_in'] ?? ''
+                            ) ?>
+                        </td>
 
-                        <th>
-                            Check-out
-                        </th>
+                        <td>
+                            <?= htmlspecialchars(
+                                $reservation['check_out'] ?? ''
+                            ) ?>
+                        </td>
 
-                        <th>
-                            Guests
-                        </th>
+                        <td>
+                            <?= (int) (
+                                $reservation['guests'] ?? 0
+                            ) ?>
+                        </td>
 
-                        <th>
-                            Price
-                        </th>
+                        <td class="price">
+                            $<?= number_format(
+                                (float) $price,
+                                2
+                            ) ?>
+                        </td>
 
-                        <th>
-                            Status
-                        </th>
+                        <td>
 
-                        <th>
-                            Created
-                        </th>
+                            <span
+                                class="status status-<?= htmlspecialchars($status) ?>"
+                            >
+                                <?= htmlspecialchars(
+                                    ucfirst($status)
+                                ) ?>
+                            </span>
 
-                        <th>
-                            History
-                        </th>
+                        </td>
+
+                        <td>
+                            <?= htmlspecialchars(
+                                $reservation['created_at'] ?? ''
+                            ) ?>
+                        </td>
+
+                        <td>
+
+                            <?php if ($status === 'pending'): ?>
+
+                                <div class="action-buttons">
+
+                                    <form
+                                        method="POST"
+                                        action="reservations.php"
+                                        onsubmit="return confirm('Approve this reservation?');"
+                                    >
+
+                                        <input
+                                            type="hidden"
+                                            name="reservation_id"
+                                            value="<?= (int) $reservation['id'] ?>"
+                                        >
+
+                                        <input
+                                            type="hidden"
+                                            name="action"
+                                            value="approve"
+                                        >
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-approve"
+                                        >
+                                            Approve
+                                        </button>
+
+                                    </form>
+
+                                    <form
+                                        method="POST"
+                                        action="reservations.php"
+                                        onsubmit="return confirm('Cancel this reservation?');"
+                                    >
+
+                                        <input
+                                            type="hidden"
+                                            name="reservation_id"
+                                            value="<?= (int) $reservation['id'] ?>"
+                                        >
+
+                                        <input
+                                            type="hidden"
+                                            name="action"
+                                            value="cancel"
+                                        >
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-cancel"
+                                        >
+                                            Cancel
+                                        </button>
+
+                                    </form>
+
+                                </div>
+
+                            <?php elseif ($status === 'confirmed'): ?>
+
+                                <span class="action-complete">
+                                    Confirmed
+                                </span>
+
+                            <?php elseif ($status === 'cancelled'): ?>
+
+                                <span class="action-cancelled">
+                                    Cancelled
+                                </span>
+
+                            <?php elseif ($status === 'completed'): ?>
+
+                                <span class="action-complete">
+                                    Completed
+                                </span>
+
+                            <?php else: ?>
+
+                                <span>
+                                    —
+                                </span>
+
+                            <?php endif; ?>
+
+                        </td>
 
                     </tr>
 
-                </thead>
+                <?php endforeach; ?>
 
-                <tbody>
+            <?php endif; ?>
 
-                    <?php foreach ($reservations as $reservation): ?>
+            </tbody>
 
-                        <tr>
+        </table>
 
-                            <td>
-                                #<?= (int) $reservation['id'] ?>
-                            </td>
+    </div>
 
-                            <td>
-                                <?= htmlspecialchars(
-                                    $reservation['customer_name'] ?? 'Unknown'
-                                ) ?>
-                            </td>
-
-                            <td>
-                                <?= htmlspecialchars(
-                                    $reservation['customer_email'] ?? '-'
-                                ) ?>
-                            </td>
-
-                            <td>
-                                <?= htmlspecialchars(
-                                    $reservation['room_name'] ?? 'Unknown Room'
-                                ) ?>
-                            </td>
-
-                            <td>
-                                <?= htmlspecialchars(
-                                    $reservation['check_in']
-                                ) ?>
-                            </td>
-
-                            <td>
-                                <?= htmlspecialchars(
-                                    $reservation['check_out']
-                                ) ?>
-                            </td>
-
-                            <td>
-                                <?= (int) $reservation['guests'] ?>
-                            </td>
-
-                            <td>
-                                $<?= number_format(
-                                    (float) ($reservation['room_price'] ?? 0),
-                                    2
-                                ) ?>
-                            </td>
-
-                            <td>
-
-                                <span
-                                    class="status <?= htmlspecialchars(
-                                        strtolower(
-                                            $reservation['status'] ?? 'pending'
-                                        )
-                                    ) ?>"
-                                >
-                                    <?= htmlspecialchars(
-                                        $reservation['status'] ?? 'pending'
-                                    ) ?>
-                                </span>
-
-                            </td>
-
-                            <td>
-                                <?= htmlspecialchars(
-                                    $reservation['created_at']
-                                ) ?>
-                            </td>
-
-                            <td>
-
-                                <?php if (!empty($reservation['deleted_at'])): ?>
-
-                                    <span class="archived">
-                                        Archived
-                                    </span>
-
-                                <?php else: ?>
-
-                                    Active
-
-                                <?php endif; ?>
-
-                            </td>
-
-                        </tr>
-
-                    <?php endforeach; ?>
-
-                </tbody>
-
-            </table>
-
-        <?php endif; ?>
-
-    </section>
+</section>
+```
 
 </main>
 
-
 <footer>
+
+```
+<div>
 
     <strong>
         LuxeStay
@@ -482,9 +665,11 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
         Hotel Management Administration System.
     </p>
 
+</div>
+```
+
 </footer>
 
 </body>
 
 </html>
-
