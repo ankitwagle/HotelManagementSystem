@@ -1,0 +1,405 @@
+/* =========================================
+   LUXESTAY HOMEPAGE
+   ========================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f7f8fc;
+    color: #14213d;
+    line-height: 1.6;
+}
+
+/* =========================================
+   HEADER
+   ========================================= */
+
+header {
+    height: 76px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 5%;
+    border-bottom: 1px solid #e8ebf2;
+    position: relative;
+    z-index: 10;
+}
+
+.logo {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 25px;
+    font-weight: 700;
+    color: #14213d;
+    letter-spacing: 0.5px;
+}
+
+nav {
+    display: flex;
+    align-items: center;
+    gap: 34px;
+}
+
+nav a {
+    text-decoration: none;
+    color: #20283a;
+    font-size: 14px;
+    font-weight: 600;
+    transition: 0.25s ease;
+}
+
+nav a:hover {
+    color: #8a6a18;
+}
+
+.register-button {
+    background: #2ab043;
+    color: #ffffff !important;
+    padding: 11px 24px;
+    border-radius: 8px;
+}
+
+.register-button:hover {
+    background: #684f14;
+}
+
+/* =========================================
+   HERO
+   ========================================= */
+
+.hero {
+    min-height: 610px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            rgba(20, 33, 61, 0.58),
+            rgba(20, 33, 61, 0.68)
+        ),
+        linear-gradient(
+            135deg,
+            #b99a61 0%,
+            #7d8da1 45%,
+            #273c56 100%
+        );
+}
+
+/*
+   This gives the homepage a hotel-style hero even though
+   you currently don't have the standalone hotel photograph.
+*/
+
+.hero::before {
+    content: "";
+    position: absolute;
+    width: 700px;
+    height: 700px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.07);
+    top: -350px;
+    left: -150px;
+}
+
+.hero::after {
+    content: "";
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: rgba(218, 190, 116, 0.12);
+    bottom: -350px;
+    right: -150px;
+}
+
+.hero > div {
+    position: relative;
+    z-index: 2;
+    max-width: 900px;
+    padding: 40px 20px;
+}
+
+.eyebrow {
+    color: #8a6a18;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+}
+
+.hero .eyebrow {
+    color: #f4d77d;
+}
+
+.hero h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(48px, 7vw, 82px);
+    line-height: 1.05;
+    color: #ffffff;
+    margin-bottom: 24px;
+    letter-spacing: -1px;
+}
+
+.hero > div > p:not(.eyebrow) {
+    color: #f4f6fa;
+    font-size: 18px;
+    max-width: 650px;
+    margin: 0 auto 32px;
+}
+
+/* =========================================
+   HERO BUTTONS
+   ========================================= */
+
+.hero-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.hero-buttons a {
+    display: inline-block;
+    padding: 14px 30px;
+    background: #80621a;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: 0.25s ease;
+}
+
+.hero-buttons a:hover {
+    background: #a27e22;
+    transform: translateY(-2px);
+}
+
+.hero-buttons .secondary {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.hero-buttons .secondary:hover {
+    background: #ffffff;
+    color: #14213d;
+}
+
+/* =========================================
+   WELCOME / ROOMS SECTION
+   ========================================= */
+
+.welcome {
+    padding: 90px 5%;
+    max-width: 1300px;
+    margin: auto;
+    text-align: center;
+}
+
+.welcome .eyebrow {
+    margin-bottom: 8px;
+}
+
+.welcome h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(36px, 5vw, 54px);
+    color: #14213d;
+    margin-bottom: 50px;
+}
+
+.welcome h2::after {
+    content: "";
+    display: block;
+    width: 55px;
+    height: 3px;
+    background: #8a6a18;
+    margin: 18px auto 0;
+}
+
+/* =========================================
+   ROOM CARDS
+   ========================================= */
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    text-align: left;
+}
+
+.cards article {
+    background: #ffffff;
+    border: 1px solid #e3e7ef;
+    border-radius: 12px;
+    padding: 32px;
+    min-height: 245px;
+    box-shadow: 0 8px 25px rgba(20, 33, 61, 0.06);
+    transition: 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.cards article::before {
+    content: "";
+    display: block;
+    height: 5px;
+    width: 100%;
+    background: #80621a;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.cards article:hover {
+    transform: translateY(-7px);
+    box-shadow: 0 16px 35px rgba(20, 33, 61, 0.12);
+}
+
+.cards h3 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 27px;
+    color: #14213d;
+    margin: 8px 0 15px;
+}
+
+.cards p {
+    color: #626b7c;
+    font-size: 15px;
+    margin-bottom: 25px;
+}
+
+.cards a {
+    color: #80621a;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.cards a:hover {
+    color: #a27e22;
+}
+
+/* =========================================
+   FOOTER
+   ========================================= */
+
+footer {
+    background: #eaf0fb;
+    border-top: 1px solid #dce3ef;
+    padding: 65px 5%;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 50px;
+}
+
+footer strong {
+    display: block;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 22px;
+    color: #14213d;
+    margin-bottom: 18px;
+}
+
+footer p {
+    color: #626b7c;
+    font-size: 14px;
+    margin-bottom: 9px;
+}
+
+footer a {
+    color: #626b7c;
+    text-decoration: none;
+}
+
+footer a:hover {
+    color: #80621a;
+}
+
+/* =========================================
+   RESPONSIVE DESIGN
+   ========================================= */
+
+@media (max-width: 900px) {
+
+    header {
+        padding: 0 25px;
+    }
+
+    nav {
+        gap: 18px;
+    }
+
+    .hero {
+        min-height: 520px;
+    }
+
+    .cards {
+        grid-template-columns: 1fr;
+        max-width: 600px;
+        margin: auto;
+    }
+
+    footer {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+
+    header {
+        height: auto;
+        padding: 20px;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    nav {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .logo {
+        font-size: 22px;
+    }
+
+    .hero {
+        min-height: 500px;
+    }
+
+    .hero h1 {
+        font-size: 45px;
+    }
+
+    .hero > div > p:not(.eyebrow) {
+        font-size: 16px;
+    }
+
+    .welcome {
+        padding: 65px 20px;
+    }
+
+    .welcome h2 {
+        font-size: 38px;
+    }
+
+    footer {
+        grid-template-columns: 1fr;
+        padding: 50px 25px;
+        gap: 30px;
+    }
+}
