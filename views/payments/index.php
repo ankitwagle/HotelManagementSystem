@@ -90,7 +90,7 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <head>
 
-```
+
 <meta charset="UTF-8">
 
 <meta
@@ -185,7 +185,7 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
 </style>
-```
+
 
 </head>
 
@@ -193,7 +193,7 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <header>
 
-```
+
 <div class="logo">
     🛏 LuxeStay
 </div>
@@ -221,13 +221,13 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </a>
 
 </nav>
-```
+
 
 </header>
 
 <main>
 
-```
+
 <section class="welcome">
 
     <p class="eyebrow">
@@ -528,13 +528,13 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <?php endif; ?>
 
 </section>
-```
+
 
 </main>
 
 <footer>
 
-```
+
 <div>
 
     <strong>
@@ -546,7 +546,7 @@ $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </p>
 
 </div>
-```
+
 
 </footer>
 

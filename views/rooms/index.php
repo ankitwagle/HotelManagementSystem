@@ -12,7 +12,7 @@ requireLogin();
 
 <head>
 
-```
+
 <meta charset="UTF-8">
 
 <meta
@@ -28,7 +28,7 @@ requireLogin();
     rel="stylesheet"
     href="/public/css/style.css"
 >
-```
+
 
 </head>
 
@@ -36,7 +36,7 @@ requireLogin();
 
 <header>
 
-```
+
 <div class="logo">
     🛏 LuxeStay
 </div>
@@ -56,13 +56,13 @@ requireLogin();
     </a>
 
 </nav>
-```
+
 
 </header>
 
 <main>
 
-```
+
 <section class="welcome">
 
     <p class="eyebrow">
@@ -161,13 +161,13 @@ requireLogin();
     </div>
 
 </section>
-```
+
 
 </main>
 
 <footer>
 
-```
+
 <strong>
     LuxeStay
 </strong>

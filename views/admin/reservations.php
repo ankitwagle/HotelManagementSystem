@@ -59,7 +59,7 @@ unset($_SESSION['reservation_message']);
 
 <head>
 
-```
+
 <meta charset="UTF-8">
 
 <meta
@@ -313,7 +313,7 @@ unset($_SESSION['reservation_message']);
     }
 
 </style>
-```
+
 
 </head>
 
@@ -321,7 +321,7 @@ unset($_SESSION['reservation_message']);
 
 <header>
 
-```
+
 <div class="logo">
     <h2>LuxeStay</h2>
     <strong>Admin</strong>
@@ -362,13 +362,13 @@ unset($_SESSION['reservation_message']);
     </a>
 
 </nav>
-```
+
 
 </header>
 
 <main class="reservation-page">
 
-```
+
 <section class="reservation-header">
 
     <a
@@ -648,13 +648,13 @@ unset($_SESSION['reservation_message']);
     </div>
 
 </section>
-```
+
 
 </main>
 
 <footer>
 
-```
+
 <div>
 
     <strong>
@@ -666,7 +666,7 @@ unset($_SESSION['reservation_message']);
     </p>
 
 </div>
-```
+
 
 </footer>
 

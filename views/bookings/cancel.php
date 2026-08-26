@@ -47,7 +47,7 @@ if (!$reservation) {
 
 <head>
 
-```
+
 <meta charset="UTF-8">
 
 <meta
@@ -63,7 +63,7 @@ if (!$reservation) {
     rel="stylesheet"
     href="/public/css/style.css"
 >
-```
+
 
 </head>
 
@@ -71,7 +71,7 @@ if (!$reservation) {
 
 <header>
 
-```
+
 <div class="logo">
     🛏 LuxeStay
 </div>
@@ -95,13 +95,13 @@ if (!$reservation) {
     </a>
 
 </nav>
-```
+
 
 </header>
 
 <main>
 
-```
+
 <section class="welcome">
 
     <p class="eyebrow">
@@ -256,13 +256,13 @@ if (!$reservation) {
     </div>
 
 </section>
-```
+
 
 </main>
 
 <footer>
 
-```
+
 <div>
 
     <strong>
@@ -274,7 +274,7 @@ if (!$reservation) {
     </p>
 
 </div>
-```
+
 
 </footer>
 

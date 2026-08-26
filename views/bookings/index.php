@@ -19,7 +19,7 @@ $reservations = $reservationModel->getUserReservations($userId);
 
 <head>
 
-```
+
 <meta charset="UTF-8">
 
 <meta
@@ -35,7 +35,7 @@ $reservations = $reservationModel->getUserReservations($userId);
     rel="stylesheet"
     href="/public/css/style.css"
 >
-```
+
 
 </head>
 
@@ -43,7 +43,7 @@ $reservations = $reservationModel->getUserReservations($userId);
 
 <header>
 
-```
+
 <div class="logo">
     🛏 LuxeStay
 </div>
@@ -67,13 +67,13 @@ $reservations = $reservationModel->getUserReservations($userId);
     </a>
 
 </nav>
-```
+
 
 </header>
 
 <main>
 
-```
+
 <section class="welcome">
 
     <p class="eyebrow">
@@ -210,13 +210,13 @@ $reservations = $reservationModel->getUserReservations($userId);
     <?php endif; ?>
 
 </section>
-```
+
 
 </main>
 
 <footer>
 
-```
+
 <div>
 
     <strong>
@@ -228,7 +228,7 @@ $reservations = $reservationModel->getUserReservations($userId);
     </p>
 
 </div>
-```
+
 
 </footer>
 

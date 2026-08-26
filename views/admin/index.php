@@ -265,7 +265,7 @@ try {
 
 <head>
 
-```
+
 <meta charset="UTF-8">
 
 <meta
@@ -558,7 +558,7 @@ try {
     }
 
 </style>
-```
+
 
 </head>
 
@@ -566,7 +566,7 @@ try {
 
 <header>
 
-```
+
 <div class="logo">
 
     <a
@@ -615,7 +615,7 @@ try {
         Notifications
     </a>
 
-    <a href="/views/users/profile.php">
+    <a href="/views/customers/profile.php">
         Profile
     </a>
 
@@ -624,13 +624,13 @@ try {
     </a>
 
 </nav>
-```
+
 
 </header>
 
 <main class="admin-dashboard">
 
-```
+
 <!-- ADMIN HEADER -->
 
 <section class="admin-header">
@@ -1269,13 +1269,13 @@ try {
     </div>
 
 </section>
-```
+
 
 </main>
 
 <footer>
 
-```
+
 <div>
 
     <strong>
@@ -1287,7 +1287,7 @@ try {
     </p>
 
 </div>
-```
+
 
 </footer>
 

@@ -9,7 +9,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 /*
 |--------------------------------------------------------------------------
-| Customer Access
+| Guest Access
 |--------------------------------------------------------------------------
 */
 
@@ -59,16 +59,16 @@ if (
     } else {
 
         /*
-        |----------------------------------------------------------------------
-        | Check duplicate email
-        |----------------------------------------------------------------------
+        |--------------------------------------------------------------------------
+        | Check Duplicate Email
+        |--------------------------------------------------------------------------
         */
 
         $check = $db->prepare("
             SELECT id
             FROM users
             WHERE email = ?
-            AND id != ?
+              AND id != ?
             LIMIT 1
         ");
 
@@ -103,9 +103,9 @@ if (
             ]);
 
             /*
-            |------------------------------------------------------------------
+            |--------------------------------------------------------------------------
             | Update Session
-            |------------------------------------------------------------------
+            |--------------------------------------------------------------------------
             */
 
             $_SESSION['user']['name'] = $name;
@@ -139,7 +139,9 @@ $stmt = $db->prepare("
     LIMIT 1
 ");
 
-$stmt->execute([$userId]);
+$stmt->execute([
+    $userId
+]);
 
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -157,7 +159,6 @@ if (!$customer) {
 
 <head>
 
-```
 <meta charset="UTF-8">
 
 <meta
@@ -321,7 +322,6 @@ if (!$customer) {
     }
 
 </style>
-```
 
 </head>
 
@@ -329,7 +329,6 @@ if (!$customer) {
 
 <header>
 
-```
 <div class="logo">
 
     <a
@@ -347,16 +346,24 @@ if (!$customer) {
         Home
     </a>
 
-    <a href="/views/customers/index.php">
-        Dashboard
+    <a href="/views/rooms/index.php">
+        Rooms
+    </a>
+
+    <a href="/views/bookings/index.php">
+        My Reservations
+    </a>
+
+    <a href="/views/payments/index.php">
+        Payments
+    </a>
+
+    <a href="/views/notifications/index.php">
+        🔔 Notifications
     </a>
 
     <a href="/views/customers/profile.php">
         Profile
-    </a>
-
-    <a href="/views/customer/notifications.php">
-        🔔 Notifications
     </a>
 
     <a href="/logout.php">
@@ -364,17 +371,15 @@ if (!$customer) {
     </a>
 
 </nav>
-```
 
 </header>
 
 <main class="profile-page">
 
-```
 <section class="profile-card">
 
     <p class="eyebrow">
-        CUSTOMER ACCOUNT
+        GUEST ACCOUNT
     </p>
 
     <h1>
@@ -385,7 +390,6 @@ if (!$customer) {
         Update your personal information below.
     </p>
 
-
     <?php if ($message !== ''): ?>
 
         <div
@@ -395,7 +399,6 @@ if (!$customer) {
         </div>
 
     <?php endif; ?>
-
 
     <form method="POST">
 
@@ -419,7 +422,6 @@ if (!$customer) {
 
             </div>
 
-
             <div class="form-group">
 
                 <label for="email">
@@ -438,7 +440,6 @@ if (!$customer) {
 
             </div>
 
-
             <div class="form-group">
 
                 <label for="phone">
@@ -455,7 +456,6 @@ if (!$customer) {
                 >
 
             </div>
-
 
             <div class="form-group full">
 
@@ -474,7 +474,6 @@ if (!$customer) {
 
         </div>
 
-
         <button
             type="submit"
             name="update_profile"
@@ -484,7 +483,6 @@ if (!$customer) {
         </button>
 
     </form>
-
 
     <div class="profile-info">
 
@@ -500,7 +498,6 @@ if (!$customer) {
 
         </div>
 
-
         <div class="info-box">
 
             <span>
@@ -514,7 +511,6 @@ if (!$customer) {
             </strong>
 
         </div>
-
 
         <div class="info-box">
 
@@ -532,16 +528,14 @@ if (!$customer) {
 
     </div>
 
-
     <a
         class="back-link"
-        href="/views/customers/index.php"
+        href="/index.php"
     >
-        ← Back to Dashboard
+        ← Back to Home
     </a>
 
 </section>
-```
 
 </main>
 

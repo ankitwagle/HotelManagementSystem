@@ -210,7 +210,7 @@ try {
 
 <head>
 
-```
+
 <meta charset="UTF-8">
 
 <meta
@@ -413,7 +413,7 @@ try {
     }
 
 </style>
-```
+
 
 </head>
 
@@ -421,7 +421,7 @@ try {
 
 <header>
 
-```
+
 <div class="logo">
     <a
         href="/index.php"
@@ -461,13 +461,13 @@ try {
     </a>
 
 </nav>
-```
+
 
 </header>
 
 <main class="customer-dashboard">
 
-```
+
 <section class="dashboard-header">
 
     <p class="eyebrow">
@@ -706,7 +706,7 @@ try {
     </div>
 
 </section>
-```
+
 
 </main>
 

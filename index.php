@@ -10,7 +10,7 @@ require_once __DIR__ . '/config/config.php';
 
 <head>
 
-```
+
 <meta charset="UTF-8">
 
 <meta
@@ -26,7 +26,7 @@ require_once __DIR__ . '/config/config.php';
     rel="stylesheet"
     href="/public/css/style.css"
 >
-```
+
 
 </head>
 
@@ -34,7 +34,7 @@ require_once __DIR__ . '/config/config.php';
 
 <header>
 
-```
+
 <div class="logo">
     <a
         href="/index.php"
@@ -71,7 +71,7 @@ require_once __DIR__ . '/config/config.php';
             Notifications
         </a>
 
-        <a href="/views/users/profile.php">
+        <a href="/views/customers/profile.php">
             Profile
         </a>
 
@@ -106,14 +106,14 @@ require_once __DIR__ . '/config/config.php';
     <?php endif; ?>
 
 </nav>
-```
+
 
 </header>
 
 
 <main>
 
-```
+
 <section class="hero">
 
     <div>
@@ -229,13 +229,13 @@ require_once __DIR__ . '/config/config.php';
     </div>
 
 </section>
-```
+
 
 </main>
 
 <footer>
 
-```
+
 <div>
 
     <strong>
@@ -302,7 +302,7 @@ require_once __DIR__ . '/config/config.php';
     </p>
 
 </div>
-```
+
 
 </footer>
 

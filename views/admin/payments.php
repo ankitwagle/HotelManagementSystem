@@ -319,7 +319,7 @@ try {
 
 <head>
 
-```
+
 <meta charset="UTF-8">
 
 <meta
@@ -484,7 +484,7 @@ try {
     }
 
 </style>
-```
+
 
 </head>
 
@@ -492,7 +492,7 @@ try {
 
 <header>
 
-```
+
 <div class="logo">
     🛏 LuxeStay Admin
 </div>
@@ -528,13 +528,13 @@ try {
     </a>
 
 </nav>
-```
+
 
 </header>
 
 <main>
 
-```
+
 <section class="welcome page-heading">
 
     <p class="eyebrow">
@@ -1088,13 +1088,13 @@ try {
     </div>
 
 </section>
-```
+
 
 </main>
 
 <footer>
 
-```
+
 <div>
 
     <strong>
@@ -1106,7 +1106,7 @@ try {
     </p>
 
 </div>
-```
+
 
 </footer>
 

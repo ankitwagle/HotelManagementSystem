@@ -74,7 +74,7 @@ $unreadCount =
 
 <head>
 
-```
+
 <meta charset="UTF-8">
 
 <meta
@@ -234,7 +234,7 @@ $unreadCount =
     }
 
 </style>
-```
+
 
 </head>
 
@@ -242,7 +242,7 @@ $unreadCount =
 
 <header>
 
-```
+
 <div class="logo">
     🛏 LuxeStay
 </div>
@@ -272,7 +272,7 @@ $unreadCount =
         <?php endif; ?>
     </a>
 
-    <a href="/views/users/profile.php">
+    <a href="/views/customers/profile.php">
         Profile
     </a>
 
@@ -281,13 +281,13 @@ $unreadCount =
     </a>
 
 </nav>
-```
+
 
 </header>
 
 <main class="notifications-page">
 
-```
+
 <div class="notifications-header">
 
     <div>
@@ -434,7 +434,7 @@ $unreadCount =
 >
     ← Back to LuxeStay Home
 </a>
-```
+
 
 </main>
 
