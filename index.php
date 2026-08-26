@@ -36,7 +36,15 @@ require_once __DIR__ . '/config/config.php';
 
 ```
 <div class="logo">
-    🛏 LuxeStay
+    <a
+        href="/index.php"
+        style="
+            color: inherit;
+            text-decoration: none;
+        "
+    >
+        🛏 LuxeStay
+    </a>
 </div>
 
 <nav>
@@ -58,6 +66,25 @@ require_once __DIR__ . '/config/config.php';
         <a href="/views/payments/index.php">
             Payments
         </a>
+
+        <a href="/views/notifications/index.php">
+            Notifications
+        </a>
+
+        <a href="/views/users/profile.php">
+            Profile
+        </a>
+
+        <?php if (
+            isset($_SESSION['user']['role'])
+            && $_SESSION['user']['role'] === 'admin'
+        ): ?>
+
+            <a href="/views/admin/index.php">
+                Admin Dashboard
+            </a>
+
+        <?php endif; ?>
 
         <a href="/logout.php">
             Logout
@@ -82,6 +109,7 @@ require_once __DIR__ . '/config/config.php';
 ```
 
 </header>
+
 
 <main>
 

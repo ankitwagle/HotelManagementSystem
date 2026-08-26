@@ -22,7 +22,7 @@ $db = Database::connect();
 */
 
 $totalCustomers = (int) $db
-    ->query("SELECT COUNT(*) FROM users WHERE role = 'customer'")
+    ->query("SELECT COUNT(*) FROM users WHERE role = 'guest'")
     ->fetchColumn();
 
 $totalRooms = (int) $db

@@ -175,7 +175,7 @@ requireLogin();
 <p>
     Excellence in hospitality and refined comfort.
 </p>
-```
+
 
 </footer>
 

@@ -9,95 +9,29 @@ if (session_status() === PHP_SESSION_NONE) {
 
 requireLogin();
 
-$userId = (int) $_SESSION['user']['id'];
+$userId = (int) ($_SESSION['user']['id'] ?? 0);
 
 $controller = new PaymentController();
 
 $message = '';
 $messageType = '';
 
-$otpStep = false;
-$selectedReservation = null;
-$selectedAmount = 0;
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $action = $_POST['action'] ?? '';
 
-    /*
-     * Start payment and send/generate OTP.
-     */
-    if ($action === 'start_payment') {
+    if ($action === 'make_payment') {
 
         $reservationId =
             (int) ($_POST['reservation_id'] ?? 0);
 
-        $result =
-            $controller->startPayment(
-                $reservationId,
-                $userId
-            );
+        $result = $controller->processPayment(
+            $reservationId,
+            $userId
+        );
 
         if ($result['success']) {
 
-            $otpStep = true;
-
-            $selectedAmount =
-                (float) ($result['amount'] ?? 0);
-
-            $message =
-                $result['message'];
-
-            $messageType =
-                'success';
-
-            /*
-             * Load the reservation again so the
-             * verification section can display its details.
-             */
-            $reservationResult =
-                $controller->getReservationForPayment(
-                    $reservationId,
-                    $userId
-                );
-
-            if ($reservationResult['success']) {
-
-                $selectedReservation =
-                    $reservationResult['reservation'];
-            }
-
-        } else {
-
-            $message =
-                $result['message'];
-
-            $messageType =
-                'error';
-        }
-    }
-
-    /*
-     * Verify OTP and complete payment.
-     */
-    elseif ($action === 'verify_otp') {
-
-        $otp =
-            trim(
-                $_POST['otp'] ?? ''
-            );
-
-        $result =
-            $controller->verifyOtp(
-                $userId,
-                $otp
-            );
-
-        if ($result['success']) {
-
-            /*
-             * Redirect to receipt after successful payment.
-             */
             header(
                 'Location: receipt.php?payment_id=' .
                 (int) $result['id']
@@ -106,45 +40,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        $message =
-            $result['message'];
-
-        $messageType =
-            'error';
-
-        $otpStep = true;
-
-        $reservationId =
-            (int) (
-                $_SESSION['payment_reservation_id']
-                ?? 0
-            );
-
-        $selectedAmount =
-            (float) (
-                $_SESSION['payment_amount']
-                ?? 0
-            );
-
-        if ($reservationId > 0) {
-
-            $reservationResult =
-                $controller->getReservationForPayment(
-                    $reservationId,
-                    $userId
-                );
-
-            if ($reservationResult['success']) {
-
-                $selectedReservation =
-                    $reservationResult['reservation'];
-            }
-        }
+        $message = $result['message'] ?? 'Payment failed.';
+        $messageType = 'error';
     }
 }
 
 /*
- * Load all customer reservations.
+ * Load all reservations belonging to the
+ * currently logged-in customer.
  */
 require_once __DIR__ . '/../../config/database.php';
 
@@ -177,10 +80,7 @@ $stmt->execute([
     $userId
 ]);
 
-$reservations =
-    $stmt->fetchAll(
-        PDO::FETCH_ASSOC
-    );
+$reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 
@@ -217,16 +117,16 @@ $reservations =
         font-weight: 600;
     }
 
-    .payment-message.success {
-        background: #ecfdf3;
-        border: 1px solid #bbf7d0;
-        color: #166534;
-    }
-
     .payment-message.error {
         background: #fef2f2;
         border: 1px solid #fecaca;
         color: #991b1b;
+    }
+
+    .payment-message.success {
+        background: #ecfdf3;
+        border: 1px solid #bbf7d0;
+        color: #166534;
     }
 
     .payment-card {
@@ -274,61 +174,14 @@ $reservations =
         background: #0f172a;
     }
 
-    .otp-card {
-        max-width: 600px;
-        margin: 0 auto 30px;
-        padding: 30px;
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 14px;
-        box-shadow:
-            0 8px 25px rgba(15, 23, 42, 0.07);
-    }
-
-    .otp-card h2 {
-        margin-top: 0;
-    }
-
-    .otp-input {
-        width: 100%;
-        padding: 13px 14px;
-        margin-top: 8px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        font-size: 20px;
-        letter-spacing: 6px;
-        text-align: center;
-    }
-
-    .otp-submit {
-        width: 100%;
+    .paid-message {
         margin-top: 15px;
-        padding: 13px;
-        border: 0;
+        padding: 12px 15px;
+        background: #ecfdf3;
+        border: 1px solid #bbf7d0;
         border-radius: 8px;
-        background: #198754;
-        color: #ffffff;
+        color: #166534;
         font-weight: 700;
-        cursor: pointer;
-    }
-
-    .otp-submit:hover {
-        background: #157347;
-    }
-
-    .amount-box {
-        margin: 20px 0;
-        padding: 16px;
-        background: #f8fafc;
-        border-radius: 9px;
-        text-align: center;
-    }
-
-    .amount-box strong {
-        display: block;
-        margin-top: 5px;
-        font-size: 26px;
-        color: #14213d;
     }
 
 </style>
@@ -391,6 +244,7 @@ $reservations =
 
 </section>
 
+
 <?php if ($message !== ''): ?>
 
     <div class="payment-message <?= htmlspecialchars($messageType) ?>">
@@ -398,89 +252,6 @@ $reservations =
         <?= htmlspecialchars($message) ?>
 
     </div>
-
-<?php endif; ?>
-
-
-<?php if ($otpStep && $selectedReservation): ?>
-
-    <section class="otp-card">
-
-        <p class="eyebrow">
-            PAYMENT VERIFICATION
-        </p>
-
-        <h2>
-            Verify Your Payment
-        </h2>
-
-        <p>
-
-            We generated a six-digit verification code
-            for the email address registered to your account.
-
-        </p>
-
-        <p>
-
-            Reservation
-            <strong>
-                #<?= (int) $selectedReservation['reservation_id'] ?>
-            </strong>
-
-        </p>
-
-        <div class="amount-box">
-
-            Payment Amount
-
-            <strong>
-                $<?= number_format(
-                    $selectedAmount,
-                    2
-                ) ?>
-            </strong>
-
-        </div>
-
-        <form
-            method="POST"
-            action=""
-        >
-
-            <input
-                type="hidden"
-                name="action"
-                value="verify_otp"
-            >
-
-            <label for="otp">
-                Enter 6-digit OTP
-            </label>
-
-            <input
-                id="otp"
-                name="otp"
-                type="text"
-                class="otp-input"
-                maxlength="6"
-                pattern="[0-9]{6}"
-                inputmode="numeric"
-                autocomplete="one-time-code"
-                placeholder="000000"
-                required
-            >
-
-            <button
-                type="submit"
-                class="otp-submit"
-            >
-                Verify OTP & Complete Payment
-            </button>
-
-        </form>
-
-    </section>
 
 <?php endif; ?>
 
@@ -539,8 +310,7 @@ $reservations =
                 $status =
                     strtolower(
                         trim(
-                            (string)
-                            $reservation['status']
+                            (string) $reservation['status']
                         )
                     );
 
@@ -652,31 +422,77 @@ $reservations =
 
                     <?php if ($status === 'confirmed'): ?>
 
-                        <form
-                            method="POST"
-                            action=""
-                        >
+                        <?php
 
-                            <input
-                                type="hidden"
-                                name="action"
-                                value="start_payment"
+                        /*
+                         * Check whether this reservation
+                         * already has a payment.
+                         */
+                        $payment = $controller->getPaymentByReservation(
+                            (int) $reservation['id']
+                        );
+
+                        $isPaid =
+                            $payment &&
+                            strtolower(
+                                (string) ($payment['status'] ?? '')
+                            ) === 'paid';
+
+                        ?>
+
+
+                        <?php if ($isPaid): ?>
+
+                            <div class="paid-message">
+
+                                ✓ Payment Completed
+
+                                <?php if (
+                                    !empty(
+                                        $payment['transaction_reference']
+                                    )
+                                ): ?>
+
+                                    <br>
+
+                                    Transaction:
+                                    <?= htmlspecialchars(
+                                        $payment['transaction_reference']
+                                    ) ?>
+
+                                <?php endif; ?>
+
+                            </div>
+
+                        <?php else: ?>
+
+                            <form
+                                method="POST"
+                                action=""
                             >
 
-                            <input
-                                type="hidden"
-                                name="reservation_id"
-                                value="<?= (int) $reservation['id'] ?>"
-                            >
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="make_payment"
+                                >
 
-                            <button
-                                type="submit"
-                                class="payment-button"
-                            >
-                                Proceed to Payment →
-                            </button>
+                                <input
+                                    type="hidden"
+                                    name="reservation_id"
+                                    value="<?= (int) $reservation['id'] ?>"
+                                >
 
-                        </form>
+                                <button
+                                    type="submit"
+                                    class="payment-button"
+                                >
+                                    Proceed to Payment →
+                                </button>
+
+                            </form>
+
+                        <?php endif; ?>
 
 
                     <?php elseif ($status === 'pending'): ?>
@@ -730,7 +546,7 @@ $reservations =
     </p>
 
 </div>
-
+```
 
 </footer>
 

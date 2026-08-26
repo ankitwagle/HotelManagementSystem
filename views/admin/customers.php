@@ -1,4 +1,3 @@
-
 <?php
 
 require_once __DIR__ . '/../../config/config.php';
@@ -14,7 +13,10 @@ if (session_status() === PHP_SESSION_NONE) {
 |--------------------------------------------------------------------------
 */
 
-if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'admin') {
+if (
+    !isset($_SESSION['user']) ||
+    ($_SESSION['user']['role'] ?? '') !== 'admin'
+) {
     http_response_code(403);
     exit('Access denied. Admin access required.');
 }
@@ -32,11 +34,22 @@ $messageType = '';
 
 /*
 |--------------------------------------------------------------------------
+| Customer Search
+|--------------------------------------------------------------------------
+*/
+
+$search = trim($_GET['search'] ?? '');
+
+/*
+|--------------------------------------------------------------------------
 | Delete Customer
 |--------------------------------------------------------------------------
 */
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_customer'])) {
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    isset($_POST['delete_customer'])
+) {
 
     $customerId = (int) ($_POST['customer_id'] ?? 0);
 
@@ -47,14 +60,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_customer'])) {
 
     } else {
 
-        // Confirm that the account is a customer
+        /*
+        |----------------------------------------------------------------------
+        | Confirm that the account is a customer
+        |----------------------------------------------------------------------
+        */
+
         $check = $db->prepare("
-            SELECT id, name
+            SELECT
+                id,
+                name
             FROM users
-            WHERE id = ? AND role = 'customer'
+            WHERE id = ?
+              AND role = 'guest'
+              AND deleted_at IS NULL
+            LIMIT 1
         ");
 
-        $check->execute([$customerId]);
+        $check->execute([
+            $customerId
+        ]);
 
         $customer = $check->fetch(PDO::FETCH_ASSOC);
 
@@ -66,9 +91,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_customer'])) {
         } else {
 
             /*
-            |--------------------------------------------------------------
+            |------------------------------------------------------------------
             | Check for existing reservations
-            |--------------------------------------------------------------
+            |------------------------------------------------------------------
             */
 
             $reservationCheck = $db->prepare("
@@ -77,9 +102,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_customer'])) {
                 WHERE user_id = ?
             ");
 
-            $reservationCheck->execute([$customerId]);
+            $reservationCheck->execute([
+                $customerId
+            ]);
 
-            $reservationCount = (int) $reservationCheck->fetchColumn();
+            $reservationCount =
+                (int) $reservationCheck->fetchColumn();
 
             if ($reservationCount > 0) {
 
@@ -93,20 +121,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_customer'])) {
             } else {
 
                 /*
-                |----------------------------------------------------------
-                | Delete customer
-                |----------------------------------------------------------
+                |------------------------------------------------------------------
+                | Soft Delete Customer
+                |------------------------------------------------------------------
                 */
 
                 $delete = $db->prepare("
-    UPDATE users
-    SET deleted_at = NOW()
-    WHERE id = ? AND role = 'customer'
-");
+                    UPDATE users
+                    SET deleted_at = NOW()
+                    WHERE id = ?
+                      AND role = 'guest'
+                      AND deleted_at IS NULL
+                ");
 
-$delete->execute([$customerId]);
-
-                $delete->execute([$customerId]);
+                $delete->execute([
+                    $customerId
+                ]);
 
                 if ($delete->rowCount() > 0) {
 
@@ -119,7 +149,9 @@ $delete->execute([$customerId]);
 
                 } else {
 
-                    $message = 'Customer could not be deleted.';
+                    $message =
+                        'Customer could not be deleted.';
+
                     $messageType = 'error';
                 }
             }
@@ -131,21 +163,68 @@ $delete->execute([$customerId]);
 |--------------------------------------------------------------------------
 | Get Customers
 |--------------------------------------------------------------------------
+|
+| Search by:
+| - Name
+| - Email
+| - Phone
+| - Address
+|
 */
 
-$customers = $db->query("
-    SELECT
-        id,
-        name,
-        email,
-        phone,
-        address,
-        role,
-        created_at
-    FROM users
-    WHERE role = 'customer'
-    ORDER BY id DESC
-")->fetchAll(PDO::FETCH_ASSOC);
+if ($search !== '') {
+
+    $customerStmt = $db->prepare("
+        SELECT
+            id,
+            name,
+            email,
+            phone,
+            address,
+            role,
+            created_at
+        FROM users
+        WHERE role = 'guest'
+          AND deleted_at IS NULL
+          AND (
+                name LIKE ?
+                OR email LIKE ?
+                OR phone LIKE ?
+                OR address LIKE ?
+          )
+        ORDER BY id DESC
+    ");
+
+    $searchTerm = '%' . $search . '%';
+
+    $customerStmt->execute([
+        $searchTerm,
+        $searchTerm,
+        $searchTerm,
+        $searchTerm
+    ]);
+
+} else {
+
+    $customerStmt = $db->prepare("
+        SELECT
+            id,
+            name,
+            email,
+            phone,
+            address,
+            role,
+            created_at
+        FROM users
+        WHERE role = 'guest'
+          AND deleted_at IS NULL
+        ORDER BY id DESC
+    ");
+
+    $customerStmt->execute();
+}
+
+$customers = $customerStmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 
@@ -155,107 +234,243 @@ $customers = $db->query("
 
 <head>
 
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-    <title>
-        Customers | LuxeStay Admin
-    </title>
+<title>
+    Customers | LuxeStay Admin
+</title>
 
-    <link
-        rel="stylesheet"
-        href="/public/css/style.css"
-    >
+<link
+    rel="stylesheet"
+    href="/public/css/style.css"
+>
 
-    <style>
+<style>
+
+    .admin-page {
+        max-width: 1300px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    .admin-page h1 {
+        color: #102a4c;
+    }
+
+    /*
+    |----------------------------------------------------------------------
+    | Search Box
+    |----------------------------------------------------------------------
+    */
+
+    .customer-search {
+        margin-top: 25px;
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow:
+            0 5px 20px rgba(0, 0, 0, .08);
+    }
+
+    .search-form {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .search-input {
+        flex: 1;
+        min-width: 0;
+        padding: 13px 16px;
+        border: 1px solid #d5dbe3;
+        border-radius: 8px;
+        font-size: 15px;
+        outline: none;
+        transition: border-color .2s ease,
+                    box-shadow .2s ease;
+    }
+
+    .search-input:focus {
+        border-color: #9b7418;
+        box-shadow:
+            0 0 0 3px rgba(155, 116, 24, .12);
+    }
+
+    .search-button {
+        background: #102a4c;
+        color: #ffffff;
+        border: none;
+        padding: 13px 22px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .search-button:hover {
+        background: #173b68;
+    }
+
+    .clear-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 13px 18px;
+        border-radius: 8px;
+        background: #eef1f5;
+        color: #102a4c;
+        text-decoration: none;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .clear-button:hover {
+        background: #e1e6ec;
+    }
+
+    .search-result {
+        margin-top: 12px;
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    /*
+    |----------------------------------------------------------------------
+    | Table
+    |----------------------------------------------------------------------
+    */
+
+    .table-container {
+        margin-top: 30px;
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow:
+            0 5px 20px rgba(0, 0, 0, .08);
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th,
+    td {
+        padding: 14px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background: #102a4c;
+        color: white;
+    }
+
+    /*
+    |----------------------------------------------------------------------
+    | Messages
+    |----------------------------------------------------------------------
+    */
+
+    .message {
+        margin-top: 20px;
+        padding: 15px 18px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .message.success {
+        background: #e8f7ee;
+        color: #176b3a;
+        border: 1px solid #a9dfbd;
+    }
+
+    .message.error {
+        background: #fdecec;
+        color: #9b1c1c;
+        border: 1px solid #efb1b1;
+    }
+
+    /*
+    |----------------------------------------------------------------------
+    | Delete Button
+    |----------------------------------------------------------------------
+    */
+
+    .delete-button {
+        background: #b42318;
+        color: white;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .delete-button:hover {
+        background: #8f1c13;
+    }
+
+    /*
+    |----------------------------------------------------------------------
+    | Back Link
+    |----------------------------------------------------------------------
+    */
+
+    .back {
+        display: inline-block;
+        margin-top: 20px;
+        color: #9b7418;
+        font-weight: bold;
+        text-decoration: none;
+    }
+
+    /*
+    |----------------------------------------------------------------------
+    | Empty State
+    |----------------------------------------------------------------------
+    */
+
+    .empty {
+        text-align: center;
+        padding: 30px;
+        color: #64748b;
+    }
+
+    /*
+    |----------------------------------------------------------------------
+    | Mobile
+    |----------------------------------------------------------------------
+    */
+
+    @media (max-width: 700px) {
+
+        .search-form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-button,
+        .clear-button {
+            width: 100%;
+            text-align: center;
+        }
 
         .admin-page {
-            max-width: 1300px;
-            margin: 40px auto;
-            padding: 20px;
-        }
-
-        .admin-page h1 {
-            color: #102a4c;
-        }
-
-        .table-container {
-            margin-top: 30px;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, .08);
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 14px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background: #102a4c;
-            color: white;
-        }
-
-        .message {
             margin-top: 20px;
-            padding: 15px 18px;
-            border-radius: 8px;
-            font-weight: 600;
+            padding: 15px;
         }
 
-        .message.success {
-            background: #e8f7ee;
-            color: #176b3a;
-            border: 1px solid #a9dfbd;
-        }
+    }
 
-        .message.error {
-            background: #fdecec;
-            color: #9b1c1c;
-            border: 1px solid #efb1b1;
-        }
+</style>
 
-        .delete-button {
-            background: #b42318;
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .delete-button:hover {
-            background: #8f1c13;
-        }
-
-        .back {
-            display: inline-block;
-            margin-top: 20px;
-            color: #9b7418;
-            font-weight: bold;
-            text-decoration: none;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 30px;
-        }
-
-    </style>
 
 </head>
 
@@ -263,193 +478,295 @@ $customers = $db->query("
 
 <header>
 
-    <div class="logo">
-        🛏 LuxeStay Admin
-    </div>
 
-    <nav>
+<!-- Clicking the LuxeStay logo now goes to the home page -->
 
-        <a href="/views/admin/index.php">
-            Dashboard
-        </a>
+<a
+    href="/index.php"
+    class="logo"
+    style="
+        text-decoration: none;
+        color: inherit;
+    "
+>
+    🛏 LuxeStay Admin
+</a>
 
-        <a href="/views/admin/reservations.php">
-            Reservations
-        </a>
+<nav>
 
-        <a href="/views/admin/customers.php">
-            Customers
-        </a>
+    <a href="/views/admin/index.php">
+        Dashboard
+    </a>
 
-        <a href="/views/admin/rooms.php">
-            Rooms
-        </a>
+    <a href="/views/admin/reservations.php">
+        Reservations
+    </a>
 
-        <a href="/views/admin/reports.php">
-            Reports
-        </a>
+    <a href="/views/admin/customers.php">
+        Customers
+    </a>
 
-        <a href="/logout.php">
-            Logout
-        </a>
+    <a href="/views/admin/rooms.php">
+        Rooms
+    </a>
 
-    </nav>
+    <a href="/views/admin/reports.php">
+        Reports
+    </a>
+
+    <a href="/logout.php">
+        Logout
+    </a>
+
+</nav>
+
 
 </header>
 
 <main class="admin-page">
 
-    <p class="eyebrow">
-        CUSTOMER MANAGEMENT
-    </p>
 
-    <h1>
-        Customers
-    </h1>
+<p class="eyebrow">
+    CUSTOMER MANAGEMENT
+</p>
 
-    <p>
-        View and manage all registered hotel customers.
-    </p>
+<h1>
+    Customers
+</h1>
+
+<p>
+    View and manage all registered hotel customers.
+</p>
 
 
-    <?php if ($message !== ''): ?>
+<?php if ($message !== ''): ?>
 
-        <div class="message <?= htmlspecialchars($messageType) ?>">
+    <div
+        class="message <?= htmlspecialchars($messageType) ?>"
+    >
 
-            <?= htmlspecialchars($message) ?>
+        <?= htmlspecialchars($message) ?>
+
+    </div>
+
+<?php endif; ?>
+
+
+<!-- CUSTOMER SEARCH -->
+
+<section class="customer-search">
+
+    <form
+        method="GET"
+        action="/views/admin/customers.php"
+        class="search-form"
+    >
+
+        <input
+            type="search"
+            name="search"
+            class="search-input"
+            placeholder="Search customer by name, email, phone, or address..."
+            value="<?= htmlspecialchars($search) ?>"
+            autocomplete="off"
+        >
+
+        <button
+            type="submit"
+            class="search-button"
+        >
+            🔎 Search
+        </button>
+
+        <?php if ($search !== ''): ?>
+
+            <a
+                href="/views/admin/customers.php"
+                class="clear-button"
+            >
+                Clear
+            </a>
+
+        <?php endif; ?>
+
+    </form>
+
+    <?php if ($search !== ''): ?>
+
+        <div class="search-result">
+
+            Showing results for:
+            <strong>
+                <?= htmlspecialchars($search) ?>
+            </strong>
+
+            —
+            <?= count($customers) ?>
+            customer(s) found.
 
         </div>
 
     <?php endif; ?>
 
+</section>
 
-    <div class="table-container">
 
-        <table>
+<!-- CUSTOMER TABLE -->
 
-            <thead>
+<div class="table-container">
 
-                <tr>
+    <table>
 
-                    <th>ID</th>
+        <thead>
 
-                    <th>Name</th>
+            <tr>
 
-                    <th>Email</th>
+                <th>ID</th>
 
-                    <th>Phone</th>
+                <th>Name</th>
 
-                    <th>Address</th>
+                <th>Email</th>
 
-                    <th>Role</th>
+                <th>Phone</th>
 
-                    <th>Registered</th>
+                <th>Address</th>
 
-                    <th>Action</th>
+                <th>Role</th>
 
-                </tr>
+                <th>Registered</th>
 
-            </thead>
+                <th>Action</th>
 
-            <tbody>
+            </tr>
 
-            <?php if (!$customers): ?>
+        </thead>
 
-                <tr>
+        <tbody>
 
-                    <td
-                        colspan="8"
-                        class="empty"
-                    >
+        <?php if (!$customers): ?>
+
+            <tr>
+
+                <td
+                    colspan="8"
+                    class="empty"
+                >
+
+                    <?php if ($search !== ''): ?>
+
+                        No customers matched
+                        "<strong>
+                            <?= htmlspecialchars($search) ?>
+                        </strong>".
+
+                    <?php else: ?>
+
                         No customers found.
+
+                    <?php endif; ?>
+
+                </td>
+
+            </tr>
+
+        <?php else: ?>
+
+            <?php foreach ($customers as $customer): ?>
+
+                <tr>
+
+                    <td>
+                        <?= htmlspecialchars(
+                            $customer['id']
+                        ) ?>
+                    </td>
+
+                    <td>
+                        <?= htmlspecialchars(
+                            $customer['name']
+                        ) ?>
+                    </td>
+
+                    <td>
+                        <?= htmlspecialchars(
+                            $customer['email']
+                        ) ?>
+                    </td>
+
+                    <td>
+                        <?= htmlspecialchars(
+                            $customer['phone'] ?? '-'
+                        ) ?>
+                    </td>
+
+                    <td>
+                        <?= htmlspecialchars(
+                            $customer['address'] ?? '-'
+                        ) ?>
+                    </td>
+
+                    <td>
+                        <?= htmlspecialchars(
+                            $customer['role']
+                        ) ?>
+                    </td>
+
+                    <td>
+                        <?= htmlspecialchars(
+                            $customer['created_at']
+                        ) ?>
+                    </td>
+
+                    <td>
+
+                        <form
+                            method="POST"
+                            onsubmit="return confirm(
+                                'Are you sure you want to delete this customer?'
+                            );"
+                        >
+
+                            <input
+                                type="hidden"
+                                name="customer_id"
+                                value="<?= (int) $customer['id'] ?>"
+                            >
+
+                            <button
+                                type="submit"
+                                name="delete_customer"
+                                class="delete-button"
+                            >
+                                Delete
+                            </button>
+
+                        </form>
+
                     </td>
 
                 </tr>
 
-            <?php else: ?>
+            <?php endforeach; ?>
 
-                <?php foreach ($customers as $customer): ?>
+        <?php endif; ?>
 
-                    <tr>
+        </tbody>
 
-                        <td>
-                            <?= htmlspecialchars($customer['id']) ?>
-                        </td>
+    </table>
 
-                        <td>
-                            <?= htmlspecialchars($customer['name']) ?>
-                        </td>
-
-                        <td>
-                            <?= htmlspecialchars($customer['email']) ?>
-                        </td>
-
-                        <td>
-                            <?= htmlspecialchars($customer['phone'] ?? '-') ?>
-                        </td>
-
-                        <td>
-                            <?= htmlspecialchars($customer['address'] ?? '-') ?>
-                        </td>
-
-                        <td>
-                            <?= htmlspecialchars($customer['role']) ?>
-                        </td>
-
-                        <td>
-                            <?= htmlspecialchars($customer['created_at']) ?>
-                        </td>
-
-                        <td>
-
-                            <form
-                                method="POST"
-                                onsubmit="return confirm(
-                                    'Are you sure you want to delete this customer?'
-                                );"
-                            >
-
-                                <input
-                                    type="hidden"
-                                    name="customer_id"
-                                    value="<?= (int) $customer['id'] ?>"
-                                >
-
-                                <button
-                                    type="submit"
-                                    name="delete_customer"
-                                    class="delete-button"
-                                >
-                                    Delete
-                                </button>
-
-                            </form>
-
-                        </td>
-
-                    </tr>
-
-                <?php endforeach; ?>
-
-            <?php endif; ?>
-
-            </tbody>
-
-        </table>
-
-    </div>
+</div>
 
 
-    <a
-        class="back"
-        href="/views/admin/index.php"
-    >
-        ← Back to Admin Dashboard
-    </a>
+<a
+    class="back"
+    href="/views/admin/index.php"
+>
+    ← Back to Admin Dashboard
+</a>
+
 
 </main>
 
 </body>
 
 </html>
-
