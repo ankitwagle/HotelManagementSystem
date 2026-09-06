@@ -36,27 +36,51 @@ requireLogin();
 
 <header>
 
+    <div class="logo">
 
-<div class="logo">
-    🛏 LuxeStay
-</div>
+        <a
+            href="/index.php"
+            style="
+                color: inherit;
+                text-decoration: none;
+            "
+        >
+            🛏 LuxeStay
+        </a>
 
-<nav>
+    </div>
 
-    <a href="/index.php">
-        Home
-    </a>
+    <nav>
 
-    <a href="/views/rooms/index.php">
-        Rooms
-    </a>
+        <a href="/index.php">
+            Home
+        </a>
 
-    <a href="/logout.php">
-        Logout
-    </a>
+        <a href="/views/rooms/index.php">
+            Rooms
+        </a>
 
-</nav>
+        <a href="/views/bookings/index.php">
+            My Reservations
+        </a>
 
+        <a href="/views/payments/index.php">
+            Payments
+        </a>
+
+        <a href="/views/notifications/index.php">
+            Notifications
+        </a>
+
+        <a href="/views/customers/profile.php">
+            Profile
+        </a>
+
+        <a href="/logout.php">
+            Logout
+        </a>
+
+    </nav>
 
 </header>
 

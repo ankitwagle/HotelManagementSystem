@@ -566,65 +566,63 @@ try {
 
 <header>
 
+    <div class="logo">
 
-<div class="logo">
+        <a
+            href="/index.php"
+            style="
+                color: inherit;
+                text-decoration: none;
+            "
+        >
+            🛏 LuxeStay
+        </a>
 
-    <a
-        href="/index.php"
-        style="
-            color: inherit;
-            text-decoration: none;
-        "
-    >
-        🛏 LuxeStay Admin
-    </a>
+    </div>
 
-</div>
+    <nav>
 
-<nav>
+        <a href="/index.php">
+            Home
+        </a>
 
-    <a href="/index.php">
-        Home
-    </a>
+        <a href="/views/admin/index.php">
+            Dashboard
+        </a>
 
-    <a href="/views/admin/index.php">
-        Admin Dashboard
-    </a>
+        <a href="/views/admin/reservations.php">
+            Reservations
+        </a>
 
-    <a href="/views/admin/reservations.php">
-        Reservations
-    </a>
+        <a href="/views/admin/customers.php">
+            Guests
+        </a>
 
-    <a href="/views/admin/customers.php">
-        Guests
-    </a>
+        <a href="/views/admin/rooms.php">
+            Rooms
+        </a>
 
-    <a href="/views/admin/rooms.php">
-        Rooms
-    </a>
+        <a href="/views/admin/payments.php">
+            Payments
+        </a>
 
-    <a href="/views/admin/payments.php">
-        Payments
-    </a>
+        <a href="/views/admin/reports.php">
+            Reports
+        </a>
 
-    <a href="/views/admin/reports.php">
-        Reports
-    </a>
+        <a href="/views/notifications/index.php">
+            Notifications
+        </a>
 
-    <a href="/views/notifications/index.php">
-        Notifications
-    </a>
+        <a href="/views/customers/profile.php">
+            Profile
+        </a>
 
-    <a href="/views/customers/profile.php">
-        Profile
-    </a>
+        <a href="/logout.php">
+            Logout
+        </a>
 
-    <a href="/logout.php">
-        Logout
-    </a>
-
-</nav>
-
+    </nav>
 
 </header>
 
@@ -1242,9 +1240,9 @@ try {
                 Manage hotel system notifications.
             </p>
 
-            <a href="/views/admin/notifications.php">
-                Open Notifications →
-            </a>
+            <a href="/views/notifications/index.php">
+    Open Notifications →
+     </a>
 
         </article>
 

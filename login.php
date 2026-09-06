@@ -12,7 +12,7 @@ require_once __DIR__ . '/controllers/AuthController.php';
 if (isLoggedIn()) {
 
     if (($_SESSION['user']['role'] ?? '') === 'admin') {
-        header('Location: /views/admin/index.php');
+        header('Location: /index.php');
         exit;
     }
 
@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (($_SESSION['user']['role'] ?? '') === 'admin') {
 
-                header('Location: /views/admin/index.php');
+                header('Location: /index.php');
                 exit;
             }
 

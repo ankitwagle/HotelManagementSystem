@@ -10,7 +10,6 @@ require_once __DIR__ . '/config/config.php';
 
 <head>
 
-
 <meta charset="UTF-8">
 
 <meta
@@ -27,44 +26,56 @@ require_once __DIR__ . '/config/config.php';
     href="/public/css/style.css"
 >
 
-
 </head>
 
 <body>
 
 <header>
 
+    <div class="logo">
 
-<div class="logo">
-    <a
-        href="/index.php"
-        style="
-            color: inherit;
-            text-decoration: none;
-        "
-    >
-        🛏 LuxeStay
-    </a>
-</div>
-
-<nav>
-
-    <a href="/index.php">
-        Home
-    </a>
-
-    <a href="/views/rooms/index.php">
-        Rooms
-    </a>
-
-    <?php if (isLoggedIn()): ?>
-
-        <a href="/views/bookings/index.php">
-            My Reservations
+        <a
+            href="/index.php"
+            style="
+                color: inherit;
+                text-decoration: none;
+            "
+        >
+            🛏 LuxeStay
         </a>
 
-        <a href="/views/payments/index.php">
+    </div>
+<nav>
+
+    <a href="/index.php">Home</a>
+
+    <?php if (
+        isLoggedIn() &&
+        ($_SESSION['user']['role'] ?? '') === 'admin'
+    ): ?>
+
+        <a href="/views/admin/index.php">
+            Dashboard
+        </a>
+
+        <a href="/views/admin/reservations.php">
+            Reservations
+        </a>
+
+        <a href="/views/admin/customers.php">
+            Guests
+        </a>
+
+        <a href="/views/admin/rooms.php">
+            Rooms
+        </a>
+
+        <a href="/views/admin/payments.php">
             Payments
+        </a>
+
+        <a href="/views/admin/reports.php">
+            Reports
         </a>
 
         <a href="/views/notifications/index.php">
@@ -75,44 +86,54 @@ require_once __DIR__ . '/config/config.php';
             Profile
         </a>
 
-        <?php if (
-            isset($_SESSION['user']['role'])
-            && $_SESSION['user']['role'] === 'admin'
-        ): ?>
-
-            <a href="/views/admin/index.php">
-                Admin Dashboard
-            </a>
-
-        <?php endif; ?>
-
         <a href="/logout.php">
             Logout
         </a>
 
     <?php else: ?>
 
-        <a href="/login.php">
-            Login
+        <a href="/views/rooms/index.php">
+            Rooms
         </a>
 
-        <a
-            href="/register.php"
-            class="register-button"
-        >
-            Register
-        </a>
+        <?php if (isLoggedIn()): ?>
+
+            <a href="/views/bookings/index.php">
+                My Reservations
+            </a>
+
+            <a href="/views/payments/index.php">
+                Payments
+            </a>
+
+            <a href="/views/notifications/index.php">
+                Notifications
+            </a>
+
+            <a href="/views/customers/profile.php">
+                Profile
+            </a>
+
+            <a href="/logout.php">
+                Logout
+            </a>
+
+        <?php else: ?>
+
+            <a href="/login.php">
+                Login
+            </a>
+
+        <?php endif; ?>
 
     <?php endif; ?>
 
 </nav>
 
-
 </header>
 
 
 <main>
-
 
 <section class="hero">
 
@@ -139,12 +160,27 @@ require_once __DIR__ . '/config/config.php';
 
             <?php if (isLoggedIn()): ?>
 
-                <a
-                    href="/views/bookings/index.php"
-                    class="secondary"
-                >
-                    My Reservations
-                </a>
+                <?php if (
+                    ($_SESSION['user']['role'] ?? '') === 'admin'
+                ): ?>
+
+                    <a
+                        href="/views/admin/index.php"
+                        class="secondary"
+                    >
+                        Admin Dashboard
+                    </a>
+
+                <?php else: ?>
+
+                    <a
+                        href="/views/bookings/index.php"
+                        class="secondary"
+                    >
+                        My Reservations
+                    </a>
+
+                <?php endif; ?>
 
             <?php else: ?>
 
@@ -162,6 +198,7 @@ require_once __DIR__ . '/config/config.php';
     </div>
 
 </section>
+
 
 <section class="welcome">
 
@@ -192,6 +229,7 @@ require_once __DIR__ . '/config/config.php';
 
         </article>
 
+
         <article>
 
             <h3>
@@ -208,6 +246,7 @@ require_once __DIR__ . '/config/config.php';
             </a>
 
         </article>
+
 
         <article>
 
@@ -230,11 +269,10 @@ require_once __DIR__ . '/config/config.php';
 
 </section>
 
-
 </main>
 
-<footer>
 
+<footer>
 
 <div>
 
@@ -249,6 +287,7 @@ require_once __DIR__ . '/config/config.php';
 
 </div>
 
+
 <div>
 
     <strong>
@@ -261,21 +300,41 @@ require_once __DIR__ . '/config/config.php';
         </a>
     </p>
 
+
     <?php if (isLoggedIn()): ?>
 
+        <?php if (
+            ($_SESSION['user']['role'] ?? '') !== 'admin'
+        ): ?>
+
+            <p>
+                <a href="/views/bookings/index.php">
+                    My Reservations
+                </a>
+            </p>
+
+            <p>
+                <a href="/views/payments/index.php">
+                    Payments
+                </a>
+            </p>
+
+        <?php endif; ?>
+
         <p>
-            <a href="/views/bookings/index.php">
-                My Reservations
+            <a href="/views/notifications/index.php">
+                Notifications
             </a>
         </p>
 
         <p>
-            <a href="/views/payments/index.php">
-                Payments
+            <a href="/views/customers/profile.php">
+                Profile
             </a>
         </p>
 
     <?php endif; ?>
+
 
     <p>
         Amenities
@@ -286,6 +345,7 @@ require_once __DIR__ . '/config/config.php';
     </p>
 
 </div>
+
 
 <div>
 
@@ -302,7 +362,6 @@ require_once __DIR__ . '/config/config.php';
     </p>
 
 </div>
-
 
 </footer>
 

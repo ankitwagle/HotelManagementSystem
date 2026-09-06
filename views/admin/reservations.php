@@ -321,48 +321,63 @@ unset($_SESSION['reservation_message']);
 
 <header>
 
+    <div class="logo">
 
-<div class="logo">
-    <h2>LuxeStay</h2>
-    <strong>Admin</strong>
-</div>
+        <a
+            href="/index.php"
+            style="
+                color: inherit;
+                text-decoration: none;
+            "
+        >
+            🛏 LuxeStay
+        </a>
 
-<nav>
+    </div>
 
-    <a href="index.php">
-        Admin Dashboard
-    </a>
+    <nav>
 
-    <a href="reservations.php">
-        All Reservations
-    </a>
+        <a href="/index.php">
+            Home
+        </a>
 
-    <a href="customers.php">
-        Customers
-    </a>
+        <a href="/views/admin/index.php">
+            Dashboard
+        </a>
 
-    <a href="rooms.php">
-        Rooms
-    </a>
+        <a href="/views/admin/reservations.php">
+            Reservations
+        </a>
 
-    <a href="cash-flow.php">
-        Customer Cash Flow
-    </a>
+        <a href="/views/admin/customers.php">
+            Guests
+        </a>
 
-    <a href="reports.php">
-        Reports
-    </a>
+        <a href="/views/admin/rooms.php">
+            Rooms
+        </a>
 
-    <a href="../../index.php">
-        Hotel Home
-    </a>
+        <a href="/views/admin/payments.php">
+            Payments
+        </a>
 
-    <a href="../../logout.php">
-        Logout
-    </a>
+        <a href="/views/admin/reports.php">
+            Reports
+        </a>
 
-</nav>
+        <a href="/views/notifications/index.php">
+            Notifications
+        </a>
 
+        <a href="/views/customers/profile.php">
+            Profile
+        </a>
+
+        <a href="/logout.php">
+            Logout
+        </a>
+
+    </nav>
 
 </header>
 

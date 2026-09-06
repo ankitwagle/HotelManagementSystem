@@ -492,43 +492,63 @@ try {
 
 <header>
 
+    <div class="logo">
 
-<div class="logo">
-    🛏 LuxeStay Admin
-</div>
+        <a
+            href="/index.php"
+            style="
+                color: inherit;
+                text-decoration: none;
+            "
+        >
+            🛏 LuxeStay
+        </a>
 
-<nav>
+    </div>
 
-    <a href="/views/admin/index.php">
-        Admin Dashboard
-    </a>
+    <nav>
 
-    <a href="/views/admin/reservations.php">
-        All Reservations
-    </a>
+        <a href="/index.php">
+            Home
+        </a>
 
-    <a href="/views/admin/customers.php">
-        Customers
-    </a>
+        <a href="/views/admin/index.php">
+            Dashboard
+        </a>
 
-    <a href="/views/admin/payments.php">
-        Customer Cash Flow
-    </a>
+        <a href="/views/admin/reservations.php">
+            Reservations
+        </a>
 
-    <a href="/views/admin/reports.php">
-        Reports
-    </a>
+        <a href="/views/admin/customers.php">
+            Guests
+        </a>
 
-    <a href="/index.php">
-        Hotel Home
-    </a>
+        <a href="/views/admin/rooms.php">
+            Rooms
+        </a>
 
-    <a href="/logout.php">
-        Logout
-    </a>
+        <a href="/views/admin/payments.php">
+            Payments
+        </a>
 
-</nav>
+        <a href="/views/admin/reports.php">
+            Reports
+        </a>
 
+        <a href="/views/notifications/index.php">
+            Notifications
+        </a>
+
+        <a href="/views/customers/profile.php">
+            Profile
+        </a>
+
+        <a href="/logout.php">
+            Logout
+        </a>
+
+    </nav>
 
 </header>
 

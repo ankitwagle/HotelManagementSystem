@@ -73,7 +73,17 @@ if (!$reservation) {
 
 
 <div class="logo">
-    🛏 LuxeStay
+
+    <a
+        href="/index.php"
+        style="
+            color: inherit;
+            text-decoration: none;
+        "
+    >
+        🛏 LuxeStay
+    </a>
+
 </div>
 
 <nav>

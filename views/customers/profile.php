@@ -326,51 +326,94 @@ if (!$customer) {
 </head>
 
 <body>
-
 <header>
 
-<div class="logo">
+    <div class="logo">
 
-    <a
-        href="/index.php"
-        style="text-decoration:none;color:inherit;"
-    >
-        🛏 LuxeStay
-    </a>
+        <a
+            href="/index.php"
+            style="
+                color: inherit;
+                text-decoration: none;
+            "
+        >
+            🛏 LuxeStay
+        </a>
 
-</div>
+    </div>
 
-<nav>
+    <nav>
 
-    <a href="/index.php">
-        Home
-    </a>
+        <a href="/index.php">
+            Home
+        </a>
 
-    <a href="/views/rooms/index.php">
-        Rooms
-    </a>
+        <?php if (
+            isLoggedIn() &&
+            ($_SESSION['user']['role'] ?? '') === 'admin'
+        ): ?>
 
-    <a href="/views/bookings/index.php">
-        My Reservations
-    </a>
+            <a href="/views/admin/index.php">
+                Dashboard
+            </a>
 
-    <a href="/views/payments/index.php">
-        Payments
-    </a>
+            <a href="/views/admin/reservations.php">
+                Reservations
+            </a>
 
-    <a href="/views/notifications/index.php">
-        🔔 Notifications
-    </a>
+            <a href="/views/admin/customers.php">
+                Guests
+            </a>
 
-    <a href="/views/customers/profile.php">
-        Profile
-    </a>
+            <a href="/views/admin/rooms.php">
+                Rooms
+            </a>
 
-    <a href="/logout.php">
-        Logout
-    </a>
+            <a href="/views/admin/payments.php">
+                Payments
+            </a>
 
-</nav>
+            <a href="/views/admin/reports.php">
+                Reports
+            </a>
+
+            <a href="/views/notifications/index.php">
+                Notifications
+            </a>
+
+            <a href="/views/customers/profile.php">
+                Profile
+            </a>
+
+        <?php else: ?>
+
+            <a href="/views/rooms/index.php">
+                Rooms
+            </a>
+
+            <a href="/views/bookings/index.php">
+                My Reservations
+            </a>
+
+            <a href="/views/payments/index.php">
+                Payments
+            </a>
+
+            <a href="/views/notifications/index.php">
+                Notifications
+            </a>
+
+            <a href="/views/customers/profile.php">
+                Profile
+            </a>
+
+        <?php endif; ?>
+
+        <a href="/logout.php">
+            Logout
+        </a>
+
+    </nav>
 
 </header>
 

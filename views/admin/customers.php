@@ -478,48 +478,63 @@ $customers = $customerStmt->fetchAll(PDO::FETCH_ASSOC);
 
 <header>
 
+    <div class="logo">
 
-<!-- Clicking the LuxeStay logo now goes to the home page -->
+        <a
+            href="/index.php"
+            style="
+                color: inherit;
+                text-decoration: none;
+            "
+        >
+            🛏 LuxeStay
+        </a>
 
-<a
-    href="/index.php"
-    class="logo"
-    style="
-        text-decoration: none;
-        color: inherit;
-    "
->
-    🛏 LuxeStay Admin
-</a>
+    </div>
 
-<nav>
+    <nav>
 
-    <a href="/views/admin/index.php">
-        Dashboard
-    </a>
+        <a href="/index.php">
+            Home
+        </a>
 
-    <a href="/views/admin/reservations.php">
-        Reservations
-    </a>
+        <a href="/views/admin/index.php">
+            Dashboard
+        </a>
 
-    <a href="/views/admin/customers.php">
-        Customers
-    </a>
+        <a href="/views/admin/reservations.php">
+            Reservations
+        </a>
 
-    <a href="/views/admin/rooms.php">
-        Rooms
-    </a>
+        <a href="/views/admin/customers.php">
+            Guests
+        </a>
 
-    <a href="/views/admin/reports.php">
-        Reports
-    </a>
+        <a href="/views/admin/rooms.php">
+            Rooms
+        </a>
 
-    <a href="/logout.php">
-        Logout
-    </a>
+        <a href="/views/admin/payments.php">
+            Payments
+        </a>
 
-</nav>
+        <a href="/views/admin/reports.php">
+            Reports
+        </a>
 
+        <a href="/views/notifications/index.php">
+            Notifications
+        </a>
+
+        <a href="/views/customers/profile.php">
+            Profile
+        </a>
+
+        <a href="/logout.php">
+            Logout
+        </a>
+
+    </nav>
 
 </header>
 

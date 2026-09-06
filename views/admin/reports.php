@@ -196,10 +196,24 @@ $monthlyReport = $db->query("
 <header>
 
     <div class="logo">
-        🛏 LuxeStay Admin
+
+        <a
+            href="/index.php"
+            style="
+                color: inherit;
+                text-decoration: none;
+            "
+        >
+            🛏 LuxeStay
+        </a>
+
     </div>
 
     <nav>
+
+        <a href="/index.php">
+            Home
+        </a>
 
         <a href="/views/admin/index.php">
             Dashboard
@@ -210,15 +224,27 @@ $monthlyReport = $db->query("
         </a>
 
         <a href="/views/admin/customers.php">
-            Customers
+            Guests
         </a>
 
         <a href="/views/admin/rooms.php">
             Rooms
         </a>
 
+        <a href="/views/admin/payments.php">
+            Payments
+        </a>
+
         <a href="/views/admin/reports.php">
             Reports
+        </a>
+
+        <a href="/views/notifications/index.php">
+            Notifications
+        </a>
+
+        <a href="/views/customers/profile.php">
+            Profile
         </a>
 
         <a href="/logout.php">
