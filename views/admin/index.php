@@ -79,9 +79,6 @@ $todayBookings = (int) $db
 |--------------------------------------------------------------------------
 | Payment Statistics
 |--------------------------------------------------------------------------
-|
-| Revenue comes only from actual paid payment records.
-|--------------------------------------------------------------------------
 */
 
 $todayRevenue = 0;
@@ -191,6 +188,88 @@ $occupancy = $totalRooms > 0
 
 /*
 |--------------------------------------------------------------------------
+| Room Availability Overview
+|--------------------------------------------------------------------------
+|
+| Shows every room and its current / next reservation.
+|
+| Priority:
+|
+| 1. Occupied Now
+| 2. Upcoming Reservation
+| 3. Available
+|
+*/
+
+$roomAvailability = [];
+
+try {
+
+    $roomAvailabilityStmt = $db->query("
+        SELECT
+            rm.id,
+            rm.room_number,
+            rm.room_type,
+            rm.price,
+            rm.capacity,
+            rm.floor,
+            rm.status AS room_status,
+
+            current_res.id AS current_reservation_id,
+            current_res.check_in AS current_check_in,
+            current_res.check_out AS current_check_out,
+            current_user.name AS current_guest_name,
+
+            next_res.id AS next_reservation_id,
+            next_res.check_in AS next_check_in,
+            next_res.check_out AS next_check_out,
+            next_user.name AS next_guest_name
+
+        FROM rooms rm
+
+        LEFT JOIN reservations current_res
+            ON current_res.id = (
+                SELECT r1.id
+                FROM reservations r1
+                WHERE r1.room_id = rm.id
+                AND r1.status IN ('pending', 'confirmed')
+                AND r1.check_in <= CURDATE()
+                AND r1.check_out > CURDATE()
+                ORDER BY r1.check_out ASC
+                LIMIT 1
+            )
+
+        LEFT JOIN users current_user
+            ON current_user.id = current_res.user_id
+
+        LEFT JOIN reservations next_res
+            ON next_res.id = (
+                SELECT r2.id
+                FROM reservations r2
+                WHERE r2.room_id = rm.id
+                AND r2.status IN ('pending', 'confirmed')
+                AND r2.check_in > CURDATE()
+                ORDER BY r2.check_in ASC
+                LIMIT 1
+            )
+
+        LEFT JOIN users next_user
+            ON next_user.id = next_res.user_id
+
+        ORDER BY rm.room_number ASC
+    ");
+
+    $roomAvailability = $roomAvailabilityStmt->fetchAll(
+        PDO::FETCH_ASSOC
+    );
+
+} catch (PDOException $e) {
+
+    $roomAvailability = [];
+}
+
+/*
+|--------------------------------------------------------------------------
 | Feedback Statistics
 |--------------------------------------------------------------------------
 */
@@ -224,30 +303,42 @@ try {
 
     $chartStmt = $db->query("
         SELECT
+
             DATE_FORMAT(paid_at, '%b %Y') AS payment_month,
+
             YEAR(paid_at) AS payment_year,
+
             MONTH(paid_at) AS payment_month_number,
+
             COALESCE(SUM(amount), 0) AS revenue
 
         FROM payments
 
         WHERE LOWER(status) = 'paid'
+
         AND paid_at IS NOT NULL
 
         GROUP BY
+
             YEAR(paid_at),
+
             MONTH(paid_at)
 
         ORDER BY
+
             YEAR(paid_at),
+
             MONTH(paid_at)
     ");
 
-    $chartRows = $chartStmt->fetchAll(PDO::FETCH_ASSOC);
+    $chartRows = $chartStmt->fetchAll(
+        PDO::FETCH_ASSOC
+    );
 
     foreach ($chartRows as $row) {
 
         $chartLabels[] = $row['payment_month'];
+
         $chartRevenue[] = (float) $row['revenue'];
     }
 
@@ -264,7 +355,6 @@ try {
 <html lang="en">
 
 <head>
-
 
 <meta charset="UTF-8">
 
@@ -486,6 +576,144 @@ try {
 
     /*
     |--------------------------------------------------------------------------
+    | Room Availability
+    |--------------------------------------------------------------------------
+    */
+
+    .room-overview {
+        margin-top: 45px;
+        margin-bottom: 45px;
+    }
+
+    .room-overview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .room-overview-header h2 {
+        margin: 0 0 8px;
+    }
+
+    .room-overview-header p {
+        margin: 0;
+        color: #64748b;
+    }
+
+    .room-table-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow:
+            0 8px 25px rgba(15, 23, 42, 0.06);
+    }
+
+    .room-table-wrapper {
+        overflow-x: auto;
+        width: 100%;
+    }
+
+    .room-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1000px;
+    }
+
+    .room-table th {
+        background: #f8fafc;
+        padding: 14px;
+        text-align: left;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #64748b;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .room-table td {
+        padding: 16px 14px;
+        border-bottom: 1px solid #edf0f3;
+        font-size: 13px;
+        vertical-align: middle;
+    }
+
+    .room-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .room-table tbody tr:hover {
+        background: #fafafa;
+    }
+
+    .room-number {
+        font-weight: 700;
+        color: #14213d;
+    }
+
+    .guest-name {
+        font-weight: 600;
+    }
+
+    .availability-status {
+        display: inline-block;
+        padding: 6px 11px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .availability-occupied {
+        background: #f8d7da;
+        color: #842029;
+    }
+
+    .availability-reserved {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .availability-available {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .availability-maintenance {
+        background: #e2e3e5;
+        color: #41464b;
+    }
+
+    .booking-details {
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .manage-rooms-btn {
+        display: inline-block;
+        padding: 11px 18px;
+        background: #14213d;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 9px;
+        font-weight: 700;
+    }
+
+    .manage-rooms-btn:hover {
+        background: #0f172a;
+    }
+
+    .empty-room-data {
+        text-align: center;
+        padding: 40px;
+        color: #64748b;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Management
     |--------------------------------------------------------------------------
     */
@@ -546,7 +774,8 @@ try {
             grid-template-columns: 1fr;
         }
 
-        .payment-analytics-header {
+        .payment-analytics-header,
+        .room-overview-header {
             flex-direction: column;
             align-items: flex-start;
         }
@@ -558,7 +787,6 @@ try {
     }
 
 </style>
-
 
 </head>
 
@@ -683,19 +911,14 @@ try {
             id="overviewToggle"
             class="overview-toggle"
         >
-
             Payment Overview
-
             <span class="arrow">
                 ▼
             </span>
-
         </button>
 
     </div>
 
-
-    <!-- PAYMENT CHART IS VISIBLE BY DEFAULT -->
 
     <article class="payment-chart-card">
 
@@ -721,8 +944,6 @@ try {
 
     </article>
 
-
-    <!-- PAYMENT OVERVIEW IS HIDDEN BY DEFAULT -->
 
     <div
         id="paymentOverview"
@@ -1142,6 +1363,302 @@ try {
 </section>
 
 
+<!-- ROOM AVAILABILITY OVERVIEW -->
+
+<section class="room-overview">
+
+    <div class="room-overview-header">
+
+        <div>
+
+            <p class="eyebrow">
+                LIVE ROOM STATUS
+            </p>
+
+            <h2>
+                Room Availability Overview
+            </h2>
+
+            <p>
+                See which rooms are occupied, reserved, or available and view booking dates and guest information.
+            </p>
+
+        </div>
+
+        <a
+            href="/views/admin/rooms.php"
+            class="manage-rooms-btn"
+        >
+            Manage Rooms →
+        </a>
+
+    </div>
+
+
+    <div class="room-table-card">
+
+        <div class="room-table-wrapper">
+
+            <table class="room-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Room
+                        </th>
+
+                        <th>
+                            Type
+                        </th>
+
+                        <th>
+                            Capacity
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Guest
+                        </th>
+
+                        <th>
+                            Check-in
+                        </th>
+
+                        <th>
+                            Booked Until
+                        </th>
+
+                        <th>
+                            Booking
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                <?php if (empty($roomAvailability)): ?>
+
+                    <tr>
+
+                        <td
+                            colspan="8"
+                            class="empty-room-data"
+                        >
+                            No room data found.
+                        </td>
+
+                    </tr>
+
+                <?php else: ?>
+
+                    <?php foreach ($roomAvailability as $room): ?>
+
+                        <?php
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Determine Room Display Status
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $displayStatus = 'available';
+                        $statusLabel = 'Available';
+
+                        $guestName = '—';
+                        $checkIn = '—';
+                        $checkOut = '—';
+                        $bookingId = '—';
+
+                        /*
+                        | Room currently occupied
+                        */
+
+                        if (
+                            !empty(
+                                $room['current_reservation_id']
+                            )
+                        ) {
+
+                            $displayStatus = 'occupied';
+                            $statusLabel = 'Occupied';
+
+                            $guestName =
+                                $room['current_guest_name']
+                                ?? 'Unknown';
+
+                            $checkIn =
+                                $room['current_check_in']
+                                ?? '—';
+
+                            $checkOut =
+                                $room['current_check_out']
+                                ?? '—';
+
+                            $bookingId =
+                                '#' .
+                                (
+                                    $room['current_reservation_id']
+                                    ?? ''
+                                );
+
+                        /*
+                        | Future reservation
+                        */
+
+                        } elseif (
+                            !empty(
+                                $room['next_reservation_id']
+                            )
+                        ) {
+
+                            $displayStatus = 'reserved';
+                            $statusLabel = 'Reserved';
+
+                            $guestName =
+                                $room['next_guest_name']
+                                ?? 'Unknown';
+
+                            $checkIn =
+                                $room['next_check_in']
+                                ?? '—';
+
+                            $checkOut =
+                                $room['next_check_out']
+                                ?? '—';
+
+                            $bookingId =
+                                '#' .
+                                (
+                                    $room['next_reservation_id']
+                                    ?? ''
+                                );
+
+                        /*
+                        | Physical room maintenance
+                        */
+
+                        } elseif (
+                            isset($room['room_status']) &&
+                            strtolower($room['room_status'])
+                            === 'maintenance'
+                        ) {
+
+                            $displayStatus = 'maintenance';
+                            $statusLabel = 'Maintenance';
+
+                        }
+
+                        ?>
+
+                        <tr>
+
+                            <td class="room-number">
+
+                                Room
+                                <?= htmlspecialchars(
+                                    $room['room_number']
+                                    ?? $room['id']
+                                ) ?>
+
+                            </td>
+
+
+                            <td>
+
+                                <?= htmlspecialchars(
+                                    $room['room_type']
+                                    ?? 'Room'
+                                ) ?>
+
+                            </td>
+
+
+                            <td>
+
+                                <?= (int) (
+                                    $room['capacity']
+                                    ?? 0
+                                ) ?>
+
+                                Guests
+
+                            </td>
+
+
+                            <td>
+
+                                <span
+                                    class="availability-status availability-<?= htmlspecialchars($displayStatus) ?>"
+                                >
+
+                                    <?= htmlspecialchars(
+                                        $statusLabel
+                                    ) ?>
+
+                                </span>
+
+                            </td>
+
+
+                            <td class="guest-name">
+
+                                <?= htmlspecialchars(
+                                    $guestName
+                                ) ?>
+
+                            </td>
+
+
+                            <td>
+
+                                <?= htmlspecialchars(
+                                    $checkIn
+                                ) ?>
+
+                            </td>
+
+
+                            <td>
+
+                                <?= htmlspecialchars(
+                                    $checkOut
+                                ) ?>
+
+                            </td>
+
+
+                            <td>
+
+                                <?= htmlspecialchars(
+                                    $bookingId
+                                ) ?>
+
+                            </td>
+
+                        </tr>
+
+                    <?php endforeach; ?>
+
+                <?php endif; ?>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
+
+
 <!-- MANAGEMENT -->
 
 <section class="welcome management-section">
@@ -1241,8 +1758,8 @@ try {
             </p>
 
             <a href="/views/notifications/index.php">
-    Open Notifications →
-     </a>
+                Open Notifications →
+            </a>
 
         </article>
 
@@ -1271,8 +1788,8 @@ try {
 
 </main>
 
-<footer>
 
+<footer>
 
 <div>
 
@@ -1286,8 +1803,8 @@ try {
 
 </div>
 
-
 </footer>
+
 
 <script>
 
@@ -1299,7 +1816,6 @@ const paymentLabels =
         JSON_HEX_AMP |
         JSON_HEX_QUOT
     ) ?>;
-
 
 const paymentRevenue =
     <?= json_encode(
@@ -1330,7 +1846,6 @@ if (chartCanvas) {
                 labels: paymentLabels,
 
                 datasets: [
-
                     {
                         label: 'Paid Revenue',
 
@@ -1346,9 +1861,7 @@ if (chartCanvas) {
 
                         pointHoverRadius: 7
                     }
-
                 ]
-
             },
 
             options: {
@@ -1375,6 +1888,7 @@ if (chartCanvas) {
                             label: function(context) {
 
                                 return ' Revenue: $' +
+
                                     Number(
                                         context.parsed.y
                                     ).toLocaleString(
@@ -1384,13 +1898,9 @@ if (chartCanvas) {
                                             maximumFractionDigits: 2
                                         }
                                     );
-
                             }
-
                         }
-
                     }
-
                 },
 
                 scales: {
@@ -1404,24 +1914,18 @@ if (chartCanvas) {
                             callback: function(value) {
 
                                 return '$' +
+
                                     Number(value)
                                     .toLocaleString(
                                         'en-US'
                                     );
-
                             }
-
                         }
-
                     }
-
                 }
-
             }
-
         }
     );
-
 }
 
 
@@ -1448,6 +1952,7 @@ if (
 
     overviewToggle.addEventListener(
         'click',
+
         function() {
 
             const isOpen =
@@ -1480,12 +1985,9 @@ if (
 
                 overviewToggle.innerHTML =
                     'Hide Payment Overview <span class="arrow">▲</span>';
-
             }
-
         }
     );
-
 }
 
 </script>

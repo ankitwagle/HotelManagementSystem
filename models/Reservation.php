@@ -1,4 +1,3 @@
-
 <?php
 
 require_once __DIR__ . '/../config/database.php';
@@ -13,18 +12,65 @@ class Reservation
     }
 
     /**
-     * Check whether a room is available for the selected dates.
+     * Find an available physical room of the requested room type
+     * for the selected dates.
+     */
+    public function findAvailableRoom(
+        string $roomType,
+        string $checkIn,
+        string $checkOut
+    ): ?array {
+
+        $stmt = $this->db->prepare("
+            SELECT
+                rm.id,
+                rm.room_number,
+                rm.room_type,
+                rm.price,
+                rm.capacity,
+                rm.floor,
+                rm.status
+            FROM rooms rm
+            WHERE rm.room_type = ?
+              AND rm.status = 'available'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM reservations r
+                  WHERE r.room_id = rm.id
+                    AND r.status IN ('pending', 'confirmed')
+                    AND r.check_in < ?
+                    AND r.check_out > ?
+              )
+            ORDER BY rm.room_number ASC
+            LIMIT 1
+        ");
+
+        $stmt->execute([
+            $roomType,
+            $checkOut,
+            $checkIn
+        ]);
+
+        $room = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $room ?: null;
+    }
+
+
+    /**
+     * Check whether a specific physical room is available.
      */
     public function isAvailable(
         int $roomId,
         string $checkIn,
         string $checkOut
     ): bool {
+
         $stmt = $this->db->prepare("
             SELECT COUNT(*)
             FROM reservations
             WHERE room_id = ?
-              AND status IN ('pending', 'approved')
+              AND status IN ('pending', 'confirmed')
               AND check_in < ?
               AND check_out > ?
         ");
@@ -35,11 +81,39 @@ class Reservation
             $checkIn
         ]);
 
-        return (int) $stmt->fetchColumn() === 0;
+        return (int)$stmt->fetchColumn() === 0;
     }
 
+
     /**
-     * Create a new reservation.
+     * Get a room by its ID.
+     */
+    public function getRoomById(int $roomId): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT
+                id,
+                room_number,
+                room_type,
+                price,
+                capacity,
+                floor,
+                status
+            FROM rooms
+            WHERE id = ?
+            LIMIT 1
+        ");
+
+        $stmt->execute([$roomId]);
+
+        $room = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $room ?: null;
+    }
+
+
+    /**
+     * Create a reservation.
      */
     public function create(
         int $userId,
@@ -49,6 +123,7 @@ class Reservation
         int $guests,
         string $specialRequests = ''
     ): int {
+
         $stmt = $this->db->prepare("
             INSERT INTO reservations
             (
@@ -73,11 +148,12 @@ class Reservation
             $specialRequests
         ]);
 
-        return (int) $this->db->lastInsertId();
+        return (int)$this->db->lastInsertId();
     }
 
+
     /**
-     * Get all reservations belonging to one user.
+     * Get reservations belonging to one customer.
      */
     public function getUserReservations(int $userId): array
     {
@@ -85,6 +161,7 @@ class Reservation
             SELECT
                 r.*,
                 rm.room_type AS room_name,
+                rm.room_number,
                 rm.price
             FROM reservations r
             INNER JOIN rooms rm
@@ -93,20 +170,20 @@ class Reservation
             ORDER BY r.created_at DESC
         ");
 
-        $stmt->execute([
-            $userId
-        ]);
+        $stmt->execute([$userId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+
     /**
-     * Cancel a pending reservation belonging to the logged-in user.
+     * Cancel a customer's pending reservation.
      */
     public function cancel(
         int $reservationId,
         int $userId
     ): bool {
+
         $stmt = $this->db->prepare("
             UPDATE reservations
             SET status = 'cancelled'
@@ -123,57 +200,121 @@ class Reservation
         return $stmt->rowCount() > 0;
     }
 
+
     /**
-     * Get all reservations for the admin.
+     * Get all reservations for admin.
      */
     public function getAllReservations(): array
     {
         $stmt = $this->db->query("
             SELECT
-                r.*,
+                r.id,
+                r.user_id,
+                r.room_id,
+
                 u.name AS customer_name,
                 u.email AS customer_email,
+
+                rm.room_number,
                 rm.room_type AS room_name,
-                rm.price
+                rm.price AS room_price,
+
+                r.check_in,
+                r.check_out,
+                r.guests,
+                r.special_requests,
+                r.status,
+                r.created_at
+
             FROM reservations r
+
             INNER JOIN users u
                 ON r.user_id = u.id
+
             INNER JOIN rooms rm
                 ON r.room_id = rm.id
-            ORDER BY r.created_at DESC
+
+            ORDER BY
+                r.check_in ASC,
+                rm.room_number ASC
         ");
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+
+    /**
+     * Get all reservations for one physical room.
+     */
+    public function getRoomReservations(int $roomId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT
+                r.id,
+                r.user_id,
+                r.room_id,
+
+                u.name AS customer_name,
+                u.email AS customer_email,
+
+                rm.room_number,
+                rm.room_type,
+
+                r.check_in,
+                r.check_out,
+                r.guests,
+                r.status,
+                r.created_at
+
+            FROM reservations r
+
+            INNER JOIN users u
+                ON r.user_id = u.id
+
+            INNER JOIN rooms rm
+                ON r.room_id = rm.id
+
+            WHERE r.room_id = ?
+
+            ORDER BY r.check_in ASC
+        ");
+
+        $stmt->execute([$roomId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
     /**
      * Update reservation status.
      */
     public function updateStatus(
-    int $reservationId,
-    string $status
-): bool {
-    $allowedStatuses = [
-        'pending',
-        'confirmed',
-        'cancelled'
-    ];
+        int $reservationId,
+        string $status
+    ): bool {
 
-    if (!in_array($status, $allowedStatuses, true)) {
-        return false;
+        $allowedStatuses = [
+            'pending',
+            'confirmed',
+            'cancelled'
+        ];
+
+        if (!in_array($status, $allowedStatuses, true)) {
+            return false;
+        }
+
+        $stmt = $this->db->prepare("
+            UPDATE reservations
+            SET status = ?
+            WHERE id = ?
+        ");
+
+        $stmt->execute([
+            $status,
+            $reservationId
+        ]);
+
+        return $stmt->rowCount() > 0;
     }
-
-    $stmt = $this->db->prepare("
-        UPDATE reservations
-        SET status = ?
-        WHERE id = ?
-    ");
-
-    $stmt->execute([
-        $status,
-        $reservationId
-    ]);
-
-    return $stmt->rowCount() > 0;
 }
-}
+?>

@@ -18,14 +18,15 @@ class ReservationController
     }
 
     /**
-     * Create a new reservation.
+     * Create a reservation.
      *
-     * After the reservation is successfully created,
-     * all administrators receive a notification.
+     * The customer selects a room type.
+     * The system automatically assigns an available
+     * physical room of that type.
      */
     public function create(
         int $userId,
-        int $roomId,
+        string $roomType,
         string $checkIn,
         string $checkOut,
         int $guests,
@@ -33,23 +34,20 @@ class ReservationController
     ): array {
 
         if ($userId <= 0) {
-
             return [
                 'success' => false,
                 'message' => 'Invalid user.'
             ];
         }
 
-        if ($roomId <= 0) {
-
+        if ($roomType === '') {
             return [
                 'success' => false,
-                'message' => 'Please select a valid room.'
+                'message' => 'Please select a room type.'
             ];
         }
 
         if ($checkIn === '' || $checkOut === '') {
-
             return [
                 'success' => false,
                 'message' =>
@@ -58,7 +56,6 @@ class ReservationController
         }
 
         if ($checkOut <= $checkIn) {
-
             return [
                 'success' => false,
                 'message' =>
@@ -67,7 +64,6 @@ class ReservationController
         }
 
         if ($guests < 1 || $guests > 10) {
-
             return [
                 'success' => false,
                 'message' =>
@@ -77,22 +73,26 @@ class ReservationController
 
         /*
         |--------------------------------------------------------------------------
-        | Check Room Availability
+        | Find Available Physical Room
         |--------------------------------------------------------------------------
         */
 
-        if (!$this->reservationModel->isAvailable(
-            $roomId,
+        $room = $this->reservationModel->findAvailableRoom(
+            $roomType,
             $checkIn,
-            $checkOut
-        )) {
+            $checkOut,
+            $guests
+        );
 
+        if (!$room) {
             return [
                 'success' => false,
                 'message' =>
-                    'This room is already reserved for the selected dates.'
+                    'No rooms of this type are available for the selected dates.'
             ];
         }
+
+        $roomId = (int) $room['id'];
 
         /*
         |--------------------------------------------------------------------------
@@ -131,23 +131,17 @@ class ReservationController
             $userId
         );
 
-        $guestName =
-            $guest['name'] ?? 'A guest';
+        $guestName = $guest['name'] ?? 'A guest';
 
         /*
         |--------------------------------------------------------------------------
         | Notify Administrators
         |--------------------------------------------------------------------------
-        |
-        | Every user whose role is "admin" receives
-        | a notification about the new reservation.
-        |
         */
 
         try {
 
-            $admins =
-                $this->userModel->getAdmins();
+            $admins = $this->userModel->getAdmins();
 
             foreach ($admins as $admin) {
 
@@ -164,25 +158,24 @@ class ReservationController
 
         } catch (PDOException $e) {
 
-            /*
-             * The reservation was already created.
-             *
-             * Notification failure should not cancel
-             * the guest's reservation.
-             */
+            // Reservation was already created.
+            // Notification failure should not cancel it.
         }
 
         return [
             'success' => true,
             'id' => $reservationId,
+            'room_number' => $room['room_number'],
             'message' =>
-                'Reservation created successfully.'
+                'Reservation created successfully. Room ' .
+                $room['room_number'] .
+                ' has been assigned.'
         ];
     }
 
 
     /**
-     * Cancel a reservation belonging to a user.
+     * Cancel a reservation belonging to the logged-in user.
      */
     public function cancel(
         int $reservationId,
@@ -190,7 +183,6 @@ class ReservationController
     ): array {
 
         if ($reservationId <= 0) {
-
             return [
                 'success' => false,
                 'message' => 'Invalid reservation.'
@@ -198,18 +190,16 @@ class ReservationController
         }
 
         if ($userId <= 0) {
-
             return [
                 'success' => false,
                 'message' => 'Invalid user.'
             ];
         }
 
-        $success =
-            $this->reservationModel->cancel(
-                $reservationId,
-                $userId
-            );
+        $success = $this->reservationModel->cancel(
+            $reservationId,
+            $userId
+        );
 
         return [
             'success' => $success,
@@ -237,7 +227,7 @@ class ReservationController
 
 
     /**
-     * Get all reservations.
+     * Get all reservations for admin.
      */
     public function allReservations(): array
     {
@@ -247,7 +237,7 @@ class ReservationController
 
 
     /**
-     * Update reservation status.
+     * Update reservation status by administrator.
      */
     public function updateStatus(
         int $reservationId,
@@ -255,7 +245,6 @@ class ReservationController
     ): array {
 
         if ($reservationId <= 0) {
-
             return [
                 'success' => false,
                 'message' => 'Invalid reservation.'
@@ -268,12 +257,7 @@ class ReservationController
             'cancelled'
         ];
 
-        if (!in_array(
-            $status,
-            $allowedStatuses,
-            true
-        )) {
-
+        if (!in_array($status, $allowedStatuses, true)) {
             return [
                 'success' => false,
                 'message' => 'Invalid reservation status.'
@@ -282,14 +266,12 @@ class ReservationController
 
         try {
 
-            $success =
-                $this->reservationModel->updateStatus(
-                    $reservationId,
-                    $status
-                );
+            $success = $this->reservationModel->updateStatus(
+                $reservationId,
+                $status
+            );
 
             if (!$success) {
-
                 return [
                     'success' => false,
                     'message' =>
@@ -298,7 +280,6 @@ class ReservationController
             }
 
             if ($status === 'confirmed') {
-
                 return [
                     'success' => true,
                     'message' =>
@@ -307,7 +288,6 @@ class ReservationController
             }
 
             if ($status === 'cancelled') {
-
                 return [
                     'success' => true,
                     'message' =>
@@ -331,4 +311,5 @@ class ReservationController
         }
     }
 }
+
 ?>
