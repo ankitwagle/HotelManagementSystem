@@ -292,7 +292,7 @@ try {
 
 /*
 |--------------------------------------------------------------------------
-| Monthly Payment Revenue
+| Daily Revenue Chart - Last 7 Days
 |--------------------------------------------------------------------------
 */
 
@@ -303,43 +303,46 @@ try {
 
     $chartStmt = $db->query("
         SELECT
-
-            DATE_FORMAT(paid_at, '%b %Y') AS payment_month,
-
-            YEAR(paid_at) AS payment_year,
-
-            MONTH(paid_at) AS payment_month_number,
-
+            DATE(paid_at) AS payment_date,
             COALESCE(SUM(amount), 0) AS revenue
-
         FROM payments
-
         WHERE LOWER(status) = 'paid'
-
         AND paid_at IS NOT NULL
-
-        GROUP BY
-
-            YEAR(paid_at),
-
-            MONTH(paid_at)
-
-        ORDER BY
-
-            YEAR(paid_at),
-
-            MONTH(paid_at)
+        AND DATE(paid_at) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        GROUP BY DATE(paid_at)
+        ORDER BY payment_date ASC
     ");
 
-    $chartRows = $chartStmt->fetchAll(
-        PDO::FETCH_ASSOC
-    );
+    $chartRows =
+        $chartStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    /*
+     * Create all 7 dates.
+     * This also shows dates with $0 revenue.
+     */
+    $revenueByDate = [];
 
     foreach ($chartRows as $row) {
 
-        $chartLabels[] = $row['payment_month'];
+        $revenueByDate[
+            $row['payment_date']
+        ] = (float) $row['revenue'];
+    }
 
-        $chartRevenue[] = (float) $row['revenue'];
+    for ($i = 6; $i >= 0; $i--) {
+
+        $date = date(
+            'Y-m-d',
+            strtotime("-{$i} days")
+        );
+
+        $chartLabels[] = date(
+            'M j',
+            strtotime($date)
+        );
+
+        $chartRevenue[] =
+            $revenueByDate[$date] ?? 0;
     }
 
 } catch (PDOException $e) {
@@ -349,7 +352,6 @@ try {
 }
 
 ?>
-
 <!DOCTYPE html>
 
 <html lang="en">
@@ -920,29 +922,67 @@ try {
     </div>
 
 
-    <article class="payment-chart-card">
+<article class="payment-chart-card">
 
-        <p class="eyebrow">
-            REVENUE TREND
-        </p>
+    <div class="revenue-card-header">
 
-        <h2>
-            Monthly Paid Revenue
-        </h2>
+        <div>
 
-        <p>
-            This chart uses actual successful payment records.
-        </p>
+            <p class="revenue-title">
+                Performance Overview
+            </p>
 
-        <div class="chart-wrapper">
+            <div class="revenue-main">
 
-            <canvas
-                id="paymentRevenueChart"
-            ></canvas>
+                <h2>
+                    $<?= number_format(
+                        array_sum($chartRevenue),
+                        2
+                    ) ?>
+                </h2>
+
+                <span class="revenue-label">
+                    Revenue - Last 7 Days
+                </span>
+
+            </div>
 
         </div>
 
-    </article>
+        <div class="date-badge">
+            Last 7 Days
+        </div>
+
+    </div>
+
+
+    <div class="chart-wrapper">
+
+        <canvas
+            id="paymentRevenueChart"
+        ></canvas>
+
+    </div>
+
+
+    <div class="revenue-footer">
+
+        <span>
+            Daily Revenue
+        </span>
+
+        <strong>
+            <?= date(
+                'M j',
+                strtotime('-6 days')
+            ) ?>
+            -
+            <?= date('M j, Y') ?>
+        </strong>
+
+    </div>
+
+</article>
 
 
     <div

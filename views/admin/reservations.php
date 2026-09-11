@@ -48,6 +48,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $controller = new ReservationController();
 $reservations = $controller->allReservations();
 
+/*
+ * Show the newest reservation first.
+ *
+ * The controller/database may return reservations in another order,
+ * so we sort here using the actual reservation creation timestamp.
+ * Reservation ID is used as a fallback because IDs normally increase
+ * as new reservations are created.
+ */
+usort($reservations, function ($a, $b) {
+
+    $createdA = strtotime($a['created_at'] ?? '') ?: 0;
+    $createdB = strtotime($b['created_at'] ?? '') ?: 0;
+
+    if ($createdA === $createdB) {
+        return ((int) ($b['id'] ?? 0)) <=> ((int) ($a['id'] ?? 0));
+    }
+
+    return $createdB <=> $createdA;
+});
+
 $message = $_SESSION['reservation_message'] ?? '';
 unset($_SESSION['reservation_message']);
 
@@ -58,7 +78,6 @@ unset($_SESSION['reservation_message']);
 <html lang="en">
 
 <head>
-
 
 <meta charset="UTF-8">
 
@@ -314,7 +333,6 @@ unset($_SESSION['reservation_message']);
 
 </style>
 
-
 </head>
 
 <body>
@@ -383,7 +401,6 @@ unset($_SESSION['reservation_message']);
 
 <main class="reservation-page">
 
-
 <section class="reservation-header">
 
     <a
@@ -402,7 +419,7 @@ unset($_SESSION['reservation_message']);
     </h1>
 
     <p>
-        View and manage all hotel reservations.
+        View and manage all hotel reservations. Newest reservations appear first.
     </p>
 
 </section>
@@ -410,7 +427,7 @@ unset($_SESSION['reservation_message']);
 <?php if ($message !== ''): ?>
 
     <div class="message">
-        <?= htmlspecialchars($message) ?>
+        <?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?>
     </div>
 
 <?php endif; ?>
@@ -490,8 +507,12 @@ unset($_SESSION['reservation_message']);
                             ($reservation['room_id'] ?? '')
                         );
 
+                    /*
+                     * ReservationController returns the room price
+                     * using the key "room_price".
+                     */
                     $price =
-                        $reservation['total_amount']
+                        $reservation['room_price']
                         ?? $reservation['price']
                         ?? 0;
 
@@ -504,28 +525,42 @@ unset($_SESSION['reservation_message']);
                         </td>
 
                         <td class="customer-name">
-                            <?= htmlspecialchars($customerName) ?>
-                        </td>
-
-                        <td>
                             <?= htmlspecialchars(
-                                $reservation['email'] ?? ''
-                            ) ?>
-                        </td>
-
-                        <td>
-                            <?= htmlspecialchars($roomName) ?>
-                        </td>
-
-                        <td>
-                            <?= htmlspecialchars(
-                                $reservation['check_in'] ?? ''
+                                $customerName,
+                                ENT_QUOTES,
+                                'UTF-8'
                             ) ?>
                         </td>
 
                         <td>
                             <?= htmlspecialchars(
-                                $reservation['check_out'] ?? ''
+                                $reservation['email'] ?? '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </td>
+
+                        <td>
+                            <?= htmlspecialchars(
+                                $roomName,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </td>
+
+                        <td>
+                            <?= htmlspecialchars(
+                                $reservation['check_in'] ?? '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </td>
+
+                        <td>
+                            <?= htmlspecialchars(
+                                $reservation['check_out'] ?? '',
+                                ENT_QUOTES,
+                                'UTF-8'
                             ) ?>
                         </td>
 
@@ -545,10 +580,16 @@ unset($_SESSION['reservation_message']);
                         <td>
 
                             <span
-                                class="status status-<?= htmlspecialchars($status) ?>"
+                                class="status status-<?= htmlspecialchars(
+                                    $status,
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>"
                             >
                                 <?= htmlspecialchars(
-                                    ucfirst($status)
+                                    ucfirst($status),
+                                    ENT_QUOTES,
+                                    'UTF-8'
                                 ) ?>
                             </span>
 
@@ -556,7 +597,9 @@ unset($_SESSION['reservation_message']);
 
                         <td>
                             <?= htmlspecialchars(
-                                $reservation['created_at'] ?? ''
+                                $reservation['created_at'] ?? '',
+                                ENT_QUOTES,
+                                'UTF-8'
                             ) ?>
                         </td>
 
@@ -664,11 +707,9 @@ unset($_SESSION['reservation_message']);
 
 </section>
 
-
 </main>
 
 <footer>
-
 
 <div>
 
@@ -681,7 +722,6 @@ unset($_SESSION['reservation_message']);
     </p>
 
 </div>
-
 
 </footer>
 

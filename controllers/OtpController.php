@@ -21,13 +21,18 @@ class OtpController
         string $name
     ): array {
 
-        // Generate secure 6-digit OTP
+        /*
+         * Generate a cryptographically secure
+         * six-digit OTP.
+         */
         $otpCode = (string) random_int(
             100000,
             999999
         );
 
-        // Save OTP in database
+        /*
+         * Store only the hashed OTP in the database.
+         */
         $saved = $this->otpModel->createOtp(
             $userId,
             $reservationId,
@@ -41,21 +46,32 @@ class OtpController
             ];
         }
 
+        $safeName = htmlspecialchars(
+            $name,
+            ENT_QUOTES,
+            'UTF-8'
+        );
+
         $subject =
             'Your LuxeStay Payment Verification Code';
 
         $body = "
-            <div style='font-family: Arial, sans-serif; line-height: 1.6;'>
+            <div style='
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+            '>
 
-                <h2>LuxeStay Payment Verification</h2>
+                <h2>
+                    LuxeStay Payment Verification
+                </h2>
 
                 <p>
-                    Hello " . htmlspecialchars($name) . ",
+                    Hello {$safeName},
                 </p>
 
                 <p>
-                    To continue with your payment, please use
-                    the following verification code:
+                    To continue with your payment,
+                    please use the following verification code:
                 </p>
 
                 <div style='
@@ -72,7 +88,13 @@ class OtpController
                 </div>
 
                 <p>
-                    This OTP expires in <strong>30 seconds</strong>.
+                    This OTP expires in
+                    <strong>30 seconds</strong>.
+                </p>
+
+                <p>
+                    You have a maximum of
+                    <strong>5 verification attempts</strong>.
                 </p>
 
                 <p>

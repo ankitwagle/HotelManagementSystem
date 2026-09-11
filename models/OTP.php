@@ -6,6 +6,8 @@ class Otp
 {
     private PDO $db;
 
+    private const MAX_ATTEMPTS = 5;
+
     public function __construct()
     {
         $this->db = Database::connect();
@@ -17,12 +19,12 @@ class Otp
         string $otpCode
     ): bool {
 
-        // Remove previous unused OTPs for this reservation
+        // Remove previous unused OTPs for this reservation.
         $deleteStmt = $this->db->prepare("
             DELETE FROM otps
             WHERE user_id = ?
-            AND reservation_id = ?
-            AND is_used = 0
+              AND reservation_id = ?
+              AND is_used = 0
         ");
 
         $deleteStmt->execute([
@@ -30,8 +32,17 @@ class Otp
             $reservationId
         ]);
 
+        // Hash the OTP before storing it.
+        $otpHash = password_hash(
+            $otpCode,
+            PASSWORD_DEFAULT
+        );
 
-        // Create new OTP valid for 10 minutes
+        if ($otpHash === false) {
+            return false;
+        }
+
+        // Create a new OTP valid for 30 seconds.
         $stmt = $this->db->prepare("
             INSERT INTO otps
             (
@@ -40,6 +51,7 @@ class Otp
                 otp_code,
                 expires_at,
                 is_used,
+                attempts,
                 created_at
             )
             VALUES
@@ -49,6 +61,7 @@ class Otp
                 ?,
                 DATE_ADD(NOW(), INTERVAL 30 SECOND),
                 0,
+                0,
                 NOW()
             )
         ");
@@ -56,7 +69,7 @@ class Otp
         return $stmt->execute([
             $userId,
             $reservationId,
-            $otpCode
+            $otpHash
         ]);
     }
 
@@ -68,21 +81,22 @@ class Otp
     ): bool {
 
         $stmt = $this->db->prepare("
-            SELECT id
+            SELECT
+                id,
+                otp_code,
+                attempts
             FROM otps
             WHERE user_id = ?
-            AND reservation_id = ?
-            AND otp_code = ?
-            AND is_used = 0
-            AND expires_at > NOW()
+              AND reservation_id = ?
+              AND is_used = 0
+              AND expires_at > NOW()
             ORDER BY id DESC
             LIMIT 1
         ");
 
         $stmt->execute([
             $userId,
-            $reservationId,
-            $otpCode
+            $reservationId
         ]);
 
         $otp = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -91,17 +105,73 @@ class Otp
             return false;
         }
 
+        /*
+         * Stop verification after the maximum number of attempts.
+         */
+        if ((int) $otp['attempts'] >= self::MAX_ATTEMPTS) {
 
-        // Mark OTP as used
+            $invalidateStmt = $this->db->prepare("
+                UPDATE otps
+                SET is_used = 1
+                WHERE id = ?
+            ");
+
+            $invalidateStmt->execute([
+                $otp['id']
+            ]);
+
+            return false;
+        }
+
+        /*
+         * Verify the submitted OTP against the stored hash.
+         */
+        $valid = password_verify(
+            $otpCode,
+            $otp['otp_code']
+        );
+
+        if (!$valid) {
+
+            /*
+             * Increase failed-attempt counter.
+             */
+            $attemptStmt = $this->db->prepare("
+                UPDATE otps
+                SET
+                    attempts = attempts + 1,
+                    is_used = CASE
+                        WHEN attempts + 1 >= ? THEN 1
+                        ELSE is_used
+                    END
+                WHERE id = ?
+                  AND is_used = 0
+            ");
+
+            $attemptStmt->execute([
+                self::MAX_ATTEMPTS,
+                $otp['id']
+            ]);
+
+            return false;
+        }
+
+        /*
+         * Correct OTP:
+         * immediately mark it as used so it cannot be reused.
+         */
         $updateStmt = $this->db->prepare("
             UPDATE otps
             SET is_used = 1
             WHERE id = ?
+              AND is_used = 0
         ");
 
-        return $updateStmt->execute([
+        $updateStmt->execute([
             $otp['id']
         ]);
+
+        return $updateStmt->rowCount() === 1;
     }
 }
 
