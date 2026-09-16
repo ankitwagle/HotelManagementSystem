@@ -1,0 +1,291 @@
+/* Shared customer-facing LuxeStay presentation. */
+
+body.customer-ui {
+    background: #f7f3ec;
+    color: #101d2f;
+}
+
+body.customer-ui > header {
+    min-height: 82px;
+    padding: 0 5.5%;
+    background: rgba(255, 253, 249, 0.98);
+    border-bottom: 1px solid rgba(16, 29, 47, 0.08);
+    box-shadow: 0 4px 22px rgba(16, 29, 47, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    position: relative;
+    z-index: 10;
+}
+
+body.customer-ui > header .logo {
+    flex-shrink: 0;
+}
+
+body.customer-ui > header nav {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 22px;
+    flex-wrap: wrap;
+}
+
+body.customer-ui > header nav a {
+    color: #425066;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+body.customer-ui > header nav a:hover {
+    color: #b9954b;
+}
+
+.notification-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 19px;
+    height: 19px;
+    margin-left: 4px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #b9954b;
+    color: #ffffff;
+    font-size: 10px;
+    line-height: 1;
+}
+
+body.customer-ui > header nav a .notification-badge,
+body.luxury-home .site-header nav a .notification-badge {
+    background: #b9954b !important;
+    color: #ffffff !important;
+    border: 1px solid #a7813f !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    vertical-align: middle;
+}
+
+.notification-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.notification-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 9px 15px;
+    border: 1px solid #b9954b;
+    border-radius: 999px;
+    background: #fffdf9;
+    color: #101d2f;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.notification-action.primary {
+    background: #b9954b;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.notification-action:hover {
+    transform: translateY(-1px);
+}
+
+body.customer-ui > main {
+    min-height: calc(100vh - 180px);
+}
+
+body.customer-ui main > .welcome:first-child,
+body.customer-ui .page-shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-left: 5%;
+    padding-right: 5%;
+}
+
+body.customer-ui main > .welcome:first-child {
+    padding-top: 70px;
+    padding-bottom: 45px;
+}
+
+body.customer-ui main > .welcome:first-child h1,
+body.customer-ui .page-title h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    color: #101d2f;
+    font-size: clamp(38px, 5vw, 62px);
+    line-height: 1.08;
+    letter-spacing: -1.4px;
+}
+
+body.customer-ui main > .welcome:first-child > p:last-of-type {
+    max-width: 650px;
+    color: #687282;
+}
+
+body.customer-ui .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 22px;
+}
+
+body.customer-ui .cards > article,
+body.customer-ui main > .welcome > article,
+body.customer-ui .customer-card {
+    background: #fffdf9;
+    border: 1px solid rgba(16, 29, 47, 0.1);
+    border-radius: 18px;
+    box-shadow: 0 12px 35px rgba(16, 29, 47, 0.07);
+}
+
+body.customer-ui .cards > article {
+    padding: 26px;
+}
+
+body.customer-ui .cards > article h2,
+body.customer-ui main > .welcome > article h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    color: #101d2f;
+}
+
+body.customer-ui .cards > article p,
+body.customer-ui main > .welcome > article p {
+    color: #687282;
+}
+
+body.customer-ui .hero-buttons {
+    gap: 12px;
+    margin-top: 24px;
+}
+
+body.customer-ui .hero-buttons a,
+body.customer-ui .hero-buttons button,
+body.customer-ui button,
+body.customer-ui .payment-button,
+body.customer-ui .receipt-button,
+body.customer-ui .save-button,
+body.customer-ui .mark-all-button,
+body.customer-ui .read-button,
+body.customer-ui .verify-button {
+    min-height: 44px;
+    border-radius: 999px;
+    font-weight: 800;
+    transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+}
+
+body.customer-ui .hero-buttons a,
+body.customer-ui .payment-button,
+body.customer-ui .receipt-button {
+    background: #b9954b;
+    color: #ffffff;
+}
+
+body.customer-ui .hero-buttons a:hover,
+body.customer-ui .payment-button:hover,
+body.customer-ui .receipt-button:hover {
+    background: #987735;
+    transform: translateY(-1px);
+}
+
+body.customer-ui input,
+body.customer-ui textarea,
+body.customer-ui select {
+    border-color: #d9dfe8;
+    border-radius: 10px;
+    background: #fffdf9;
+}
+
+body.customer-ui input:focus,
+body.customer-ui textarea:focus,
+body.customer-ui select:focus {
+    border-color: #b9954b;
+    box-shadow: 0 0 0 3px rgba(185, 149, 75, .16);
+}
+
+body.customer-ui footer {
+    margin-top: 50px;
+    padding: 34px 5%;
+    background: #0b1625;
+    color: rgba(255, 255, 255, .68);
+}
+
+body.customer-ui footer strong {
+    color: #ffffff;
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+body.customer-ui .status-panel,
+body.customer-ui .payment-message,
+body.customer-ui .reservation-message,
+body.customer-ui .message,
+body.customer-ui .otp-message {
+    border-radius: 12px;
+}
+
+body.customer-ui .status-panel h2,
+body.customer-ui .receipt-card h1,
+body.customer-ui .success-card h1,
+body.customer-ui .profile-card h1,
+body.customer-ui .notifications-header h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    color: #101d2f;
+}
+
+body.customer-ui .notification-card,
+body.customer-ui .receipt-card,
+body.customer-ui .success-card,
+body.customer-ui .profile-card,
+body.customer-ui .otp-card {
+    border-color: rgba(16, 29, 47, .1);
+    box-shadow: 0 14px 36px rgba(16, 29, 47, .08);
+}
+
+@media (max-width: 800px) {
+    body.customer-ui > header {
+        align-items: flex-start;
+        flex-direction: column;
+        padding-top: 18px;
+        padding-bottom: 18px;
+    }
+
+    body.customer-ui > header nav {
+        justify-content: flex-start;
+        gap: 12px 18px;
+    }
+
+    body.customer-ui main > .welcome:first-child {
+        padding-top: 48px;
+    }
+}
+
+@media (max-width: 520px) {
+    body.customer-ui main > .welcome:first-child,
+    body.customer-ui .page-shell {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    body.customer-ui .hero-buttons a,
+    body.customer-ui .hero-buttons button,
+    body.customer-ui .payment-button,
+    body.customer-ui .receipt-button {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media print {
+    body.customer-ui > header,
+    body.customer-ui > footer {
+        display: none;
+    }
+}

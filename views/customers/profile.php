@@ -175,6 +175,10 @@ if (!$customer) {
     href="/public/css/style.css"
 >
 
+<link
+    rel="stylesheet"
+    href="/public/css/customer.css"
+>
 <style>
 
     .profile-page {
@@ -325,7 +329,7 @@ if (!$customer) {
 
 </head>
 
-<body>
+<body class="customer-ui">
 <header>
 
     <div class="logo">
@@ -337,7 +341,8 @@ if (!$customer) {
                 text-decoration: none;
             "
         >
-            🛏 LuxeStay
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
         </a>
 
     </div>
@@ -378,7 +383,7 @@ if (!$customer) {
             </a>
 
             <a href="/views/notifications/index.php">
-                Notifications
+                Notifications<?php require __DIR__ . '/../partials/notification-badge.php'; ?>
             </a>
 
             <a href="/views/customers/profile.php">
@@ -400,7 +405,7 @@ if (!$customer) {
             </a>
 
             <a href="/views/notifications/index.php">
-                Notifications
+                Notifications<?php require __DIR__ . '/../partials/notification-badge.php'; ?>
             </a>
 
             <a href="/views/customers/profile.php">

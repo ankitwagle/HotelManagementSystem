@@ -16,6 +16,27 @@ class AuthController
         string $password
     ): array {
 
+        $result = $this->authenticateCredentials(
+            $email,
+            $password
+        );
+
+        if (!$result['success']) {
+            return $result;
+        }
+
+        $this->completeLogin($result['user']);
+
+        return [
+            'success' => true
+        ];
+    }
+
+    public function authenticateCredentials(
+        string $email,
+        string $password
+    ): array {
+
         $user = $this->userModel->findByEmail($email);
 
         if (!$user) {
@@ -32,15 +53,26 @@ class AuthController
             ];
         }
 
+        return [
+            'success' => true,
+            'user' => [
+                'id' => $user['id'],
+                'name' => $user['name'],
+                'email' => $user['email'],
+                'role' => $user['role']
+            ]
+        ];
+    }
+
+    public function completeLogin(array $user): void
+    {
+        session_regenerate_id(true);
+
         $_SESSION['user'] = [
             'id' => $user['id'],
             'name' => $user['name'],
             'email' => $user['email'],
             'role' => $user['role']
-        ];
-
-        return [
-            'success' => true
         ];
     }
 

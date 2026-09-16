@@ -96,6 +96,63 @@ class Payment
         return $payment ?: null;
     }
 
+    public function getSuccessfulPaidPayment(int $reservationId): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT
+                id,
+                booking_id,
+                amount,
+                payment_method,
+                transaction_reference,
+                status,
+                paid_at,
+                service_charge,
+                refund_amount,
+                refund_reference,
+                refunded_at,
+                created_at
+            FROM payments
+            WHERE booking_id = ?
+              AND LOWER(TRIM(status)) IN ('paid', 'refunded')
+            ORDER BY id DESC
+            LIMIT 1
+        ");
+        $stmt->execute([$reservationId]);
+        $payment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $payment ?: null;
+    }
+
+    public function markRefunded(
+        int $paymentId,
+        float $serviceCharge,
+        float $refundAmount,
+        string $refundReference,
+        string $refundedAt
+    ): bool {
+        $stmt = $this->db->prepare("
+            UPDATE payments
+            SET status = 'refunded',
+                service_charge = ?,
+                refund_amount = ?,
+                refund_reference = ?,
+                refunded_at = ?
+            WHERE id = ?
+              AND LOWER(TRIM(status)) = 'paid'
+        ");
+
+        $stmt->execute([
+            $serviceCharge,
+            $refundAmount,
+            $refundReference,
+            $refundedAt,
+            $paymentId
+        ]);
+
+        return $stmt->rowCount() > 0;
+    }
+
     /**
      * Create a payment record.
      */

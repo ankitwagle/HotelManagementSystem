@@ -26,6 +26,11 @@
 
     <div class="auth-card">
 
+        <a class="auth-brand" href="/index.php">
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
+        </a>
+
         <h1>Welcome Back</h1>
 
         <p>
@@ -121,4 +126,3 @@
 </body>
 
 </html>
-

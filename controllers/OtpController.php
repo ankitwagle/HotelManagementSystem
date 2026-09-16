@@ -21,6 +21,44 @@ class OtpController
         string $name
     ): array {
 
+        return $this->sendOtp(
+            $userId,
+            $reservationId,
+            $email,
+            $name,
+            'Your LuxeStay Payment Verification Code',
+            'LuxeStay Payment Verification',
+            'To continue with your payment, please use the following verification code:'
+        );
+    }
+
+    public function sendLoginOtp(
+        int $userId,
+        string $email,
+        string $name
+    ): array {
+
+        return $this->sendOtp(
+            $userId,
+            null,
+            $email,
+            $name,
+            'Your LuxeStay Login Verification Code',
+            'LuxeStay Login Verification',
+            'To complete your login, please use the following verification code:'
+        );
+    }
+
+    private function sendOtp(
+        int $userId,
+        ?int $reservationId,
+        string $email,
+        string $name,
+        string $subject,
+        string $heading,
+        string $instruction
+    ): array {
+
         /*
          * Generate a cryptographically secure
          * six-digit OTP.
@@ -52,9 +90,6 @@ class OtpController
             'UTF-8'
         );
 
-        $subject =
-            'Your LuxeStay Payment Verification Code';
-
         $body = "
             <div style='
                 font-family: Arial, sans-serif;
@@ -62,7 +97,7 @@ class OtpController
             '>
 
                 <h2>
-                    LuxeStay Payment Verification
+                    {$heading}
                 </h2>
 
                 <p>
@@ -70,8 +105,7 @@ class OtpController
                 </p>
 
                 <p>
-                    To continue with your payment,
-                    please use the following verification code:
+                    {$instruction}
                 </p>
 
                 <div style='
@@ -140,6 +174,18 @@ class OtpController
         return $this->otpModel->verifyOtp(
             $userId,
             $reservationId,
+            trim($otpCode)
+        );
+    }
+
+    public function verifyLoginOtp(
+        int $userId,
+        string $otpCode
+    ): bool {
+
+        return $this->otpModel->verifyOtp(
+            $userId,
+            null,
             trim($otpCode)
         );
     }

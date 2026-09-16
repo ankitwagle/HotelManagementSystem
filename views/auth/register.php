@@ -44,6 +44,11 @@ php
 
     <div class="auth-card">
 
+        <a class="auth-brand" href="/index.php">
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
+        </a>
+
         <h1>Guest Registration</h1>
 
         <p>
@@ -332,4 +337,3 @@ php
 </body>
 
 </html>
-

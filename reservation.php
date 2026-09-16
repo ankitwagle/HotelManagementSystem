@@ -94,7 +94,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
     );
 
     if ($result['success']) {
-        $success = $result['message'];
+        header(
+            'Location: /views/bookings/cancel.php?id=' .
+            (int) $result['id']
+        );
+        exit;
     } else {
         $error = $result['message'];
     }
@@ -130,6 +134,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
 <div class="auth-container">
 
     <div class="auth-card">
+
+        <a class="auth-brand" href="/index.php">
+            Luxe<span>Stay</span>
+        </a>
 
         <h1>
             Make a Reservation

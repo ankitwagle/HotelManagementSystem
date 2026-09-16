@@ -1,23 +1,48 @@
 <?php
 
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/stripe.php';
 require_once __DIR__ . '/../models/Payment.php';
-require_once __DIR__ . '/NotificationController.php';
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use Stripe\StripeClient;
 
 class PaymentController
 {
     private Payment $paymentModel;
-    private NotificationController $notificationController;
+    private StripeClient $stripe;
 
     public function __construct()
     {
         $this->paymentModel = new Payment();
-        $this->notificationController =
-            new NotificationController();
+
+        $stripeConfig = require __DIR__ . '/../config/stripe.php';
+
+        if (
+            empty($stripeConfig['secret_key']) ||
+            !str_starts_with(
+                $stripeConfig['secret_key'],
+                'sk_test_'
+            )
+        ) {
+            throw new Exception(
+                'Stripe test secret key is not configured correctly.'
+            );
+        }
+
+        $this->stripe = new StripeClient(
+            $stripeConfig['secret_key']
+        );
     }
 
-    /**
-     * Get a confirmed reservation that belongs to the logged-in user.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get reservation for payment
+    |--------------------------------------------------------------------------
+    */
+
     public function getReservationForPayment(
         int $reservationId,
         int $userId
@@ -57,9 +82,13 @@ class PaymentController
         ];
     }
 
-    /**
-     * Get the latest payment for a reservation.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get existing payment
+    |--------------------------------------------------------------------------
+    */
+
     public function getPaymentByReservation(
         int $reservationId
     ): ?array {
@@ -68,24 +97,22 @@ class PaymentController
             return null;
         }
 
-        return $this->paymentModel->getPaymentByReservation(
-            $reservationId
-        );
+        return $this->paymentModel
+            ->getPaymentByReservation($reservationId);
     }
 
-    /**
-     * Process a direct payment.
-     *
-     * OTP/email verification is intentionally not used here.
-     */
-    public function processPayment(
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create Stripe Checkout Session
+    |--------------------------------------------------------------------------
+    */
+
+    public function createCheckoutSession(
         int $reservationId,
         int $userId
     ): array {
 
-        /*
-         * Verify reservation.
-         */
         $reservationResult =
             $this->getReservationForPayment(
                 $reservationId,
@@ -99,25 +126,28 @@ class PaymentController
         $reservation =
             $reservationResult['reservation'];
 
+
         /*
-         * Check whether a payment already exists.
-         */
+        |--------------------------------------------------------------------------
+        | Prevent payment if already paid
+        |--------------------------------------------------------------------------
+        */
+
         $existingPayment =
-            $this->paymentModel->getPaymentByReservation(
-                $reservationId
-            );
+            $this->paymentModel
+                ->getPaymentByReservation(
+                    $reservationId
+                );
 
         if ($existingPayment) {
 
-            $status =
-                strtolower(
-                    trim(
-                        (string) (
-                            $existingPayment['status']
-                            ?? ''
-                        )
+            $status = strtolower(
+                trim(
+                    (string)(
+                        $existingPayment['status'] ?? ''
                     )
-                );
+                )
+            );
 
             if ($status === 'paid') {
 
@@ -129,9 +159,13 @@ class PaymentController
             }
         }
 
+
         /*
-         * Calculate number of nights.
-         */
+        |--------------------------------------------------------------------------
+        | Calculate number of nights
+        |--------------------------------------------------------------------------
+        */
+
         try {
 
             $checkIn = new DateTime(
@@ -154,18 +188,24 @@ class PaymentController
             ];
         }
 
+
         if ($nights < 1) {
             $nights = 1;
         }
 
+
         /*
-         * Calculate total payment.
-         */
+        |--------------------------------------------------------------------------
+        | Calculate total
+        |--------------------------------------------------------------------------
+        */
+
         $pricePerNight =
-            (float) $reservation['price'];
+            (float)$reservation['price'];
 
         $totalAmount =
             $nights * $pricePerNight;
+
 
         if ($totalAmount <= 0) {
 
@@ -176,85 +216,183 @@ class PaymentController
             ];
         }
 
-        /*
-         * Generate transaction reference.
-         */
-        $transactionReference =
-            'LUXE-' .
-            date('YmdHis') .
-            '-' .
-            strtoupper(
-                bin2hex(
-                    random_bytes(3)
-                )
-            );
 
         /*
-         * Create payment.
-         */
+        |--------------------------------------------------------------------------
+        | Stripe uses the smallest currency unit.
+        |
+        | Example:
+        | $100.00 = 10000 cents
+        |--------------------------------------------------------------------------
+        */
+
+        $amountInCents =
+            (int)round($totalAmount * 100);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create Stripe Checkout Session
+        |--------------------------------------------------------------------------
+        */
+
         try {
 
-            $paymentId =
-                $this->paymentModel->createPayment(
-                    $reservationId,
-                    $totalAmount,
-                    'Direct Payment',
-                    $transactionReference
-                );
+            $checkoutSession =
+                $this->stripe
+                    ->checkout
+                    ->sessions
+                    ->create([
 
-            /*
-             * Create guest notification
-             * after successful payment.
-             */
-            try {
+                        'mode' => 'payment',
 
-                $this->notificationController->create(
-                    $userId,
-                    'Payment Successful',
-                    'Your payment of $' .
-                    number_format(
-                        $totalAmount,
-                        2
-                    ) .
-                    ' for reservation #' .
-                    $reservationId .
-                    ' was completed successfully. ' .
-                    'Transaction reference: ' .
-                    $transactionReference . '.'
-                );
+                        'line_items' => [
 
-            } catch (Exception $notificationError) {
+                            [
+                                'price_data' => [
 
-                /*
-                 * Do not fail the payment if the
-                 * notification cannot be created.
-                 */
-            }
+                                    'currency' => 'usd',
+
+                                    'product_data' => [
+
+                                        'name' =>
+                                            'LuxeStay - ' .
+                                            $reservation['room_name'],
+
+                                        'description' =>
+                                            $nights .
+                                            ' night(s) hotel reservation'
+                                    ],
+
+                                    'unit_amount' =>
+                                        $amountInCents
+                                ],
+
+                                'quantity' => 1
+                            ]
+                        ],
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Customer information
+                        |--------------------------------------------------------------------------
+                        */
+
+                        'customer_email' =>
+                            $reservation['customer_email'],
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Metadata
+                        |--------------------------------------------------------------------------
+                        |
+                        | This lets our webhook identify exactly
+                        | which LuxeStay reservation was paid.
+                        |--------------------------------------------------------------------------
+                        */
+
+                        'metadata' => [
+
+                            'reservation_id' =>
+                                (string)$reservationId,
+
+                            'user_id' =>
+                                (string)$userId
+                        ],
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Stripe → LuxeStay
+                        |--------------------------------------------------------------------------
+                        */
+
+                        'success_url' =>
+                            BASE_URL .
+                            '/views/payments/stripe-success.php' .
+                            '?session_id={CHECKOUT_SESSION_ID}',
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Customer cancels Stripe payment
+                        |--------------------------------------------------------------------------
+                        */
+
+                        'cancel_url' =>
+                            BASE_URL .
+                            '/views/payments/index.php'
+                    ]);
+
 
             return [
+
                 'success' => true,
-                'id' => $paymentId,
-                'reservation_id' => $reservationId,
-                'amount' => $totalAmount,
-                'transaction_reference' =>
-                    $transactionReference,
+
+                'session_id' =>
+                    $checkoutSession->id,
+
+                'checkout_url' =>
+                    $checkoutSession->url,
+
+                'amount' =>
+                    $totalAmount,
+
                 'message' =>
-                    'Payment completed successfully.'
+                    'Stripe Checkout session created successfully.'
             ];
 
-        } catch (PDOException $e) {
+
+        } catch (Exception $e) {
+
+            error_log(
+                'Stripe Checkout Error: ' .
+                $e->getMessage()
+            );
 
             return [
+
                 'success' => false,
+
                 'message' =>
-                    'Database error while creating payment.'
+                    'Unable to start Stripe payment. Please try again.'
             ];
         }
     }
 
-    /**
-     * Get all payments belonging to a user.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Direct payment is disabled
+    |--------------------------------------------------------------------------
+    |
+    | Payments must now go through Stripe Checkout.
+    |
+    */
+
+    public function processPayment(
+        int $reservationId,
+        int $userId
+    ): array {
+
+        return [
+
+            'success' => false,
+
+            'message' =>
+                'Direct payment is disabled. Please use Stripe Checkout.'
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | User payment history
+    |--------------------------------------------------------------------------
+    */
+
     public function userPayments(
         int $userId
     ): array {
@@ -263,9 +401,8 @@ class PaymentController
             return [];
         }
 
-        return $this->paymentModel->getUserPayments(
-            $userId
-        );
+        return $this->paymentModel
+            ->getUserPayments($userId);
     }
 }
 ?>

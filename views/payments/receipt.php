@@ -123,6 +123,10 @@ $paidAt = $payment['paid_at'] ?: $payment['payment_created_at'];
         href="/public/css/style.css"
     >
 
+    <link
+        rel="stylesheet"
+        href="/public/css/customer.css"
+    >
     <style>
 
         .receipt-wrapper {
@@ -307,12 +311,18 @@ $paidAt = $payment['paid_at'] ?: $payment['payment_created_at'];
 
 </head>
 
-<body>
+<body class="customer-ui">
 
 <header>
 
     <div class="logo">
-        🛏 LuxeStay
+        <a
+            href="/index.php"
+            style="color: inherit; text-decoration: none;"
+        >
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
+        </a>
     </div>
 
     <nav>
@@ -331,6 +341,10 @@ $paidAt = $payment['paid_at'] ?: $payment['payment_created_at'];
 
         <a href="/views/payments/index.php">
             Payments
+        </a>
+
+        <a href="/views/notifications/index.php">
+            Notifications<?php require __DIR__ . '/../partials/notification-badge.php'; ?>
         </a>
 
         <a href="/logout.php">
@@ -644,4 +658,3 @@ $paidAt = $payment['paid_at'] ?: $payment['payment_created_at'];
 </body>
 
 </html>
-

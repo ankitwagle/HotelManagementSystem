@@ -7,11 +7,9 @@ requireLogin();
 ?>
 
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
-
 
 <meta charset="UTF-8">
 
@@ -29,26 +27,26 @@ requireLogin();
     href="/public/css/style.css"
 >
 
-
+<link
+    rel="stylesheet"
+    href="/public/css/customer.css"
+>
 </head>
 
-<body>
+<body class="luxury-rooms customer-ui">
 
-<header>
+
+<header class="site-header">
 
     <div class="logo">
 
-        <a
-            href="/index.php"
-            style="
-                color: inherit;
-                text-decoration: none;
-            "
-        >
-            🛏 LuxeStay
+        <a href="/index.php" aria-label="LuxeStay home">
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
         </a>
 
     </div>
+
 
     <nav>
 
@@ -56,7 +54,10 @@ requireLogin();
             Home
         </a>
 
-        <a href="/views/rooms/index.php">
+        <a
+            class="active"
+            href="/views/rooms/index.php"
+        >
             Rooms
         </a>
 
@@ -69,14 +70,17 @@ requireLogin();
         </a>
 
         <a href="/views/notifications/index.php">
-            Notifications
+            Notifications<?php require __DIR__ . '/../partials/notification-badge.php'; ?>
         </a>
 
         <a href="/views/customers/profile.php">
             Profile
         </a>
 
-        <a href="/logout.php">
+        <a
+            class="nav-cta"
+            href="/logout.php"
+        >
             Logout
         </a>
 
@@ -84,124 +88,341 @@ requireLogin();
 
 </header>
 
+
 <main>
 
 
-<section class="welcome">
+    <!-- ROOMS HERO -->
 
-    <p class="eyebrow">
-        LUXESTAY ACCOMMODATION
-    </p>
+    <section class="rooms-hero">
 
-    <h1>
-        Choose Your Room
-    </h1>
+        <div>
 
-    <p>
-        Welcome,
-        <?= htmlspecialchars($_SESSION['user']['name']) ?>.
-        Explore our available accommodations.
-    </p>
-
-    <div class="cards">
-
-        <!-- STANDARD ROOM -->
-
-        <article>
-
-            <h2>
-                Standard Room
-            </h2>
-
-            <p>
-                Comfortable accommodation with
-                everything you need for a relaxing stay.
+            <p class="eyebrow">
+                LUXESTAY ACCOMMODATION
             </p>
 
-            <p>
-                <strong>
-                    $150 / night
-                </strong>
-            </p>
-
-            <a href="/reservation.php?room_id=1">
-                Reserve Room →
-            </a>
-
-        </article>
-
-
-        <!-- DELUXE ROOM -->
-
-        <article>
-
-            <h2>
-                Deluxe Room
-            </h2>
+            <h1>
+                Choose your <em>room.</em>
+            </h1>
 
             <p>
-                Elevated comfort with premium amenities
-                and beautiful views.
+                Welcome,
+                <?= htmlspecialchars($_SESSION['user']['name']) ?>.
+                Discover a stay designed around comfort,
+                calm, and convenience.
             </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- ROOMS LIST -->
+
+    <section class="rooms-list-section">
+
+        <div class="room-list-heading">
+
+            <div>
+
+                <p class="eyebrow">
+                    STAY YOUR WAY
+                </p>
+
+                <h2>
+                    Find your perfect space
+                </h2>
+
+            </div>
 
             <p>
-                <strong>
-                    $285 / night
-                </strong>
+                All rates are shown per night.
+                Select a room to continue to the
+                secure reservation process.
             </p>
 
-            <a href="/reservation.php?room_id=2">
-                Reserve Room →
-            </a>
-
-        </article>
+        </div>
 
 
-        <!-- EXECUTIVE SUITE -->
+        <div class="cards room-list-grid">
 
-        <article>
 
-            <h2>
-                Executive Suite
-            </h2>
+            <!-- STANDARD ROOM -->
 
-            <p>
-                Spacious luxury with refined facilities
-                and exceptional service.
-            </p>
+            <article class="room-card room-standard">
 
-            <p>
-                <strong>
-                    $450 / night
-                </strong>
-            </p>
+                <div class="room-image">
 
-            <a href="/reservation.php?room_id=3">
-                Reserve Room →
-            </a>
+                    <span class="room-tag">
+                        COMFORT
+                    </span>
 
-        </article>
+                </div>
 
-    </div>
 
-</section>
+                <div class="room-card-body">
 
+                    <div class="room-card-top">
+
+                        <h2>
+                            Standard Room
+                        </h2>
+
+                        <span class="room-price">
+                            $150
+                            <small>/ night</small>
+                        </span>
+
+                    </div>
+
+
+                    <p>
+                        Comfortable accommodation with
+                        everything you need for a relaxing stay.
+                    </p>
+
+
+                    <div class="room-meta">
+
+                        <span>
+                            ♙ 2 guests
+                        </span>
+
+                        <span>
+                            ◷ Flexible stay
+                        </span>
+
+                    </div>
+
+
+                    <a
+                        class="room-action"
+                        href="/reservation.php?room_id=1"
+                    >
+                        Reserve Room
+                        <span>→</span>
+                    </a>
+
+                </div>
+
+            </article>
+
+
+            <!-- DELUXE ROOM -->
+
+            <article class="room-card room-deluxe">
+
+                <div class="room-image">
+
+                    <span class="room-tag">
+                        SIGNATURE
+                    </span>
+
+                </div>
+
+
+                <div class="room-card-body">
+
+                    <div class="room-card-top">
+
+                        <h2>
+                            Deluxe Room
+                        </h2>
+
+                        <span class="room-price">
+                            $285
+                            <small>/ night</small>
+                        </span>
+
+                    </div>
+
+
+                    <p>
+                        Elevated comfort with premium amenities
+                        and beautiful views.
+                    </p>
+
+
+                    <div class="room-meta">
+
+                        <span>
+                            ♙ 3 guests
+                        </span>
+
+                        <span>
+                            ◷ Flexible stay
+                        </span>
+
+                    </div>
+
+
+                    <a
+                        class="room-action"
+                        href="/reservation.php?room_id=2"
+                    >
+                        Reserve Room
+                        <span>→</span>
+                    </a>
+
+                </div>
+
+            </article>
+
+
+            <!-- EXECUTIVE SUITE -->
+
+            <article class="room-card room-suite">
+
+                <div class="room-image">
+
+                    <span class="room-tag">
+                        LUXURY
+                    </span>
+
+                </div>
+
+
+                <div class="room-card-body">
+
+                    <div class="room-card-top">
+
+                        <h2>
+                            Executive Suite
+                        </h2>
+
+                        <span class="room-price">
+                            $450
+                            <small>/ night</small>
+                        </span>
+
+                    </div>
+
+
+                    <p>
+                        Spacious luxury with refined facilities
+                        and exceptional service.
+                    </p>
+
+
+                    <div class="room-meta">
+
+                        <span>
+                            ♙ 4 guests
+                        </span>
+
+                        <span>
+                            ◷ Premium stay
+                        </span>
+
+                    </div>
+
+
+                    <a
+                        class="room-action"
+                        href="/reservation.php?room_id=3"
+                    >
+                        Reserve Room
+                        <span>→</span>
+                    </a>
+
+                </div>
+
+            </article>
+
+
+        </div>
+
+    </section>
 
 </main>
 
-<footer>
+
+<!-- FOOTER -->
+
+<footer class="site-footer">
+
+    <div>
+
+        <strong>
+            Luxe<span>Stay</span>
+        </strong>
+
+        <p>
+            Excellence in hospitality and refined comfort
+            for the modern traveler.
+        </p>
+
+    </div>
 
 
-<strong>
-    LuxeStay
-</strong>
+    <div>
 
-<p>
-    Excellence in hospitality and refined comfort.
-</p>
+        <strong>
+            Quick Links
+        </strong>
 
+        <p>
+            <a href="/index.php">
+                Home
+            </a>
+        </p>
+
+        <p>
+            <a href="/views/rooms/index.php">
+                Rooms
+            </a>
+        </p>
+
+        <p>
+            <a href="/views/bookings/index.php">
+                My Reservations
+            </a>
+        </p>
+
+        <p>
+            <a href="/views/payments/index.php">
+                Payments
+            </a>
+        </p>
+
+    </div>
+
+
+    <div>
+
+        <strong>
+            Guest Care
+        </strong>
+
+        <p>
+            <a href="/views/notifications/index.php">
+                Notifications
+            </a>
+        </p>
+
+        <p>
+            <a href="/views/customers/profile.php">
+                Profile
+            </a>
+        </p>
+
+        <p>
+            Secure booking & payment
+        </p>
+
+    </div>
+
+
+    <div class="footer-bottom">
+
+        © <?= date('Y') ?> LuxeStay.
+        All rights reserved.
+
+    </div>
 
 </footer>
+
 
 </body>
 

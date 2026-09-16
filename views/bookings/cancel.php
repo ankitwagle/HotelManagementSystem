@@ -14,8 +14,8 @@ $reservationId =
         ? (int) $_GET['id']
         : 0;
 
-$message = '';
-$messageType = '';
+$message = (string) ($_GET['message'] ?? '');
+$messageType = 'success';
 
 /*
 |--------------------------------------------------------------------------
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             new ReservationController();
 
         $result =
-            $reservationController->cancel(
+            $reservationController->requestCancellation(
                 $reservationId,
                 $userId
             );
@@ -42,10 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result['success']) {
 
             header(
-                'Location: /views/bookings/index.php?message=' .
-                urlencode(
-                    'Reservation cancelled successfully.'
-                )
+                'Location: /views/bookings/cancel.php?id=' .
+                $reservationId . '&message=' . urlencode($result['message'])
             );
 
             exit;
@@ -115,6 +113,37 @@ if (!$reservation) {
     exit;
 }
 
+$paymentStmt = $db->prepare("
+    SELECT id
+    FROM payments
+    WHERE booking_id = ?
+      AND LOWER(TRIM(status)) = 'paid'
+    ORDER BY id DESC
+    LIMIT 1
+");
+
+$paymentStmt->execute([
+    $reservationId
+]);
+
+$hasPaidPayment = (bool) $paymentStmt->fetchColumn();
+
+$refundStmt = $db->prepare("
+    SELECT amount, service_charge, refund_amount, refund_reference, refunded_at
+    FROM payments
+    WHERE booking_id = ?
+      AND LOWER(TRIM(status)) = 'refunded'
+    ORDER BY id DESC
+    LIMIT 1
+");
+$refundStmt->execute([$reservationId]);
+$refundDetails = $refundStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+if ($reservation['status'] !== 'cancel_requested'
+    && $messageType === 'success') {
+    $message = '';
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -139,6 +168,10 @@ if (!$reservation) {
     href="/public/css/style.css"
 >
 
+<link
+    rel="stylesheet"
+    href="/public/css/customer.css"
+>
 <style>
 
     .reservation-message {
@@ -153,6 +186,12 @@ if (!$reservation) {
         background: #fef2f2;
         border: 1px solid #fecaca;
         color: #991b1b;
+    }
+
+    .reservation-message.success {
+        background: #ecfdf3;
+        border: 1px solid #bbf7d0;
+        color: #166534;
     }
 
     .cancel-button {
@@ -170,11 +209,68 @@ if (!$reservation) {
         background: #b91c1c;
     }
 
+    .status-panel {
+        max-width: 900px;
+        margin: 0 auto 28px;
+        padding: 22px 26px;
+        border-radius: 12px;
+        border: 1px solid;
+        text-align: left;
+    }
+
+    .status-panel h2 {
+        margin: 0 0 6px;
+    }
+
+    .status-panel p {
+        margin: 0;
+    }
+
+    .status-panel.pending {
+        background: #fff8e6;
+        border-color: #f1d48a;
+        color: #765b12;
+    }
+
+    .status-panel.confirmed {
+        background: #ecfdf3;
+        border-color: #bbf7d0;
+        color: #166534;
+    }
+
+    .status-panel.cancelled {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #991b1b;
+    }
+
+    .status-panel.cancel-requested {
+        background: #fff8e6;
+        border-color: #f1d48a;
+        color: #765b12;
+    }
+
+    .payment-button {
+        display: inline-block;
+        padding: 13px 22px;
+        border: 0;
+        border-radius: 8px;
+        background: #b9954b;
+        color: #ffffff;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 15px;
+    }
+
+    .payment-button:hover {
+        background: #987735;
+    }
+
 </style>
 
 </head>
 
-<body>
+<body class="customer-ui">
 
 <header>
 
@@ -187,7 +283,8 @@ if (!$reservation) {
                 text-decoration: none;
             "
         >
-            🛏 LuxeStay
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
         </a>
 
     </div>
@@ -211,7 +308,7 @@ if (!$reservation) {
         </a>
 
         <a href="/views/notifications/index.php">
-            Notifications
+            Notifications<?php require __DIR__ . '/../partials/notification-badge.php'; ?>
         </a>
 
         <a href="/views/customers/profile.php">
@@ -245,6 +342,61 @@ if (!$reservation) {
     </p>
 
 </section>
+
+<?php if ($reservation['status'] === 'pending'): ?>
+
+    <div class="status-panel pending">
+
+        <h2>Waiting for Admin Approval</h2>
+
+        <p>
+            Your reservation has been created successfully and is waiting
+            for administrator approval. Payment will become available after
+            your reservation is approved.
+        </p>
+
+    </div>
+
+<?php elseif ($reservation['status'] === 'confirmed' && !$hasPaidPayment): ?>
+
+    <div class="status-panel confirmed">
+
+        <h2>Reservation Confirmed</h2>
+
+        <p>
+            Your stay is confirmed. Continue to the existing secure Stripe
+            Checkout flow when you are ready.
+        </p>
+
+    </div>
+
+<?php elseif ($reservation['status'] === 'confirmed' && $hasPaidPayment): ?>
+
+    <div class="status-panel confirmed">
+        <h2>Payment Completed</h2>
+        <p>Your reservation is confirmed and payment has been completed.</p>
+    </div>
+
+<?php elseif ($reservation['status'] === 'cancelled'): ?>
+
+    <div class="status-panel cancelled">
+
+        <h2>Reservation Cancelled</h2>
+
+        <p>
+            This reservation is no longer active and cannot be paid.
+        </p>
+
+    </div>
+
+<?php elseif ($reservation['status'] === 'cancel_requested'): ?>
+
+    <div class="status-panel cancel-requested">
+        <h2>Cancellation Requested</h2>
+        <p>Waiting for Admin Approval</p>
+    </div>
+
+<?php endif; ?>
 
 
 <?php if ($message !== ''): ?>
@@ -420,7 +572,71 @@ if (!$reservation) {
                     type="submit"
                     class="cancel-button"
                 >
-                    Cancel Reservation
+                    Request Cancellation
+                </button>
+
+            </form>
+
+        <?php elseif ($reservation['status'] === 'confirmed'): ?>
+
+            <?php if (!$hasPaidPayment): ?>
+
+                <form
+                    method="POST"
+                    action="/views/payments/index.php"
+                    style="display: inline;"
+                >
+
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="start_payment"
+                    >
+
+                    <input
+                        type="hidden"
+                        name="reservation_id"
+                        value="<?= (int) $reservation['id'] ?>"
+                    >
+
+                    <button
+                        type="submit"
+                        class="payment-button"
+                    >
+                        Proceed to Payment →
+                    </button>
+
+                </form>
+
+            <?php else: ?>
+
+                <p>
+                    Payment has already been completed for this reservation.
+                </p>
+
+            <?php endif; ?>
+
+            <form
+                method="POST"
+                style="display: inline;"
+                onsubmit="
+                    return confirm(
+                        'Are you sure you want to cancel this reservation?'
+                    );
+                "
+            >
+
+                <input
+                    type="hidden"
+                    name="reservation_id"
+                    value="<?= (int) $reservation['id'] ?>"
+                >
+
+                <button
+                    type="submit"
+                    class="cancel-button"
+                >
+                    Request Cancellation
                 </button>
 
             </form>
@@ -431,12 +647,20 @@ if (!$reservation) {
                 This reservation has already been cancelled.
             </p>
 
-        <?php elseif ($reservation['status'] === 'confirmed'): ?>
+            <?php if ($refundDetails): ?>
+                <article>
+                    <p class="eyebrow">REFUND DETAILS</p>
+                    <p><strong>Original Payment:</strong> $<?= number_format((float) $refundDetails['amount'], 2) ?></p>
+                    <p><strong>Service Charge (10%):</strong> $<?= number_format((float) $refundDetails['service_charge'], 2) ?></p>
+                    <p><strong>Refund Amount:</strong> $<?= number_format((float) $refundDetails['refund_amount'], 2) ?></p>
+                    <p><strong>Refund Reference:</strong> <?= htmlspecialchars($refundDetails['refund_reference']) ?></p>
+                    <p><strong>Refund Date:</strong> <?= htmlspecialchars($refundDetails['refunded_at']) ?></p>
+                </article>
+            <?php endif; ?>
 
-            <p>
-                This reservation has been confirmed and can no longer
-                be cancelled from this page.
-            </p>
+        <?php elseif ($reservation['status'] === 'cancel_requested'): ?>
+
+            <p>Cancellation Request Submitted. Waiting for Admin Approval.</p>
 
         <?php endif; ?>
 

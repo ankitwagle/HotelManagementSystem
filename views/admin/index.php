@@ -133,8 +133,8 @@ try {
     $refundRequests = (int) $db
         ->query("
             SELECT COUNT(*)
-            FROM payments
-            WHERE LOWER(status) = 'refund_requested'
+            FROM reservations
+            WHERE LOWER(status) = 'cancel_requested'
         ")
         ->fetchColumn();
 
@@ -373,6 +373,11 @@ try {
 <link
     rel="stylesheet"
     href="/public/css/style.css"
+>
+
+<link
+    rel="stylesheet"
+    href="/public/css/admin.css"
 >
 
 <script
@@ -792,7 +797,7 @@ try {
 
 </head>
 
-<body>
+<body class="admin-ui">
 
 <header>
 
@@ -805,7 +810,8 @@ try {
                 text-decoration: none;
             "
         >
-            🛏 LuxeStay
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
         </a>
 
     </div>
@@ -848,7 +854,7 @@ try {
             Profile
         </a>
 
-        <a href="/logout.php">
+        <a class="nav-cta" href="/logout.php">
             Logout
         </a>
 

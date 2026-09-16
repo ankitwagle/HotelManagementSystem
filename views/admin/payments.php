@@ -302,7 +302,9 @@ try {
         ->query("
             SELECT COUNT(*)
             FROM payments
-            WHERE status = 'refund_requested'
+            WHERE booking_id IN (
+                SELECT id FROM reservations WHERE status = 'cancel_requested'
+            )
         ")
         ->fetchColumn();
 
@@ -334,6 +336,11 @@ try {
 <link
     rel="stylesheet"
     href="../../public/css/style.css"
+>
+
+<link
+    rel="stylesheet"
+    href="../../public/css/admin.css"
 >
 
 <!-- Highcharts -->
@@ -409,9 +416,9 @@ try {
         color: #92400e;
     }
 
-    .status-refund_requested {
-        background: #fee2e2;
-        color: #991b1b;
+    .status-refunded {
+        background: #dbeafe;
+        color: #1e40af;
     }
 
     .status-other {
@@ -488,7 +495,7 @@ try {
 
 </head>
 
-<body>
+<body class="admin-ui">
 
 <header>
 
@@ -501,7 +508,8 @@ try {
                 text-decoration: none;
             "
         >
-            🛏 LuxeStay
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
         </a>
 
     </div>
@@ -544,7 +552,7 @@ try {
             Profile
         </a>
 
-        <a href="/logout.php">
+        <a class="nav-cta" href="/logout.php">
             Logout
         </a>
 
@@ -774,7 +782,7 @@ try {
                             [
                                 'paid',
                                 'pending',
-                                'refund_requested'
+                                'refunded'
                             ],
                             true
                         )

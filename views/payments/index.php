@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../controllers/PaymentController.php';
-require_once __DIR__ . '/../../controllers/OtpController.php';
+require_once __DIR__ . '/../../controllers/StripeController.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -13,7 +13,6 @@ requireLogin();
 $userId = (int) ($_SESSION['user']['id'] ?? 0);
 
 $paymentController = new PaymentController();
-$otpController = new OtpController();
 
 $message = '';
 $messageType = '';
@@ -22,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $action = $_POST['action'] ?? '';
 
-    if ($action === 'send_otp') {
+    if ($action === 'start_payment') {
 
         $reservationId =
             (int) ($_POST['reservation_id'] ?? 0);
@@ -46,62 +45,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         } else {
 
-            $reservation =
-                $reservationResult['reservation'];
+            $stripeResult =
+                (new StripeController())->createCheckoutSession(
+                    $reservationResult['reservation'],
+                    $userId
+                );
 
-            /*
-             * Get user email and name.
-             */
-            $email =
-                $_SESSION['user']['email']
-                ?? $reservation['customer_email']
-                ?? '';
+            if (
+                $stripeResult['success'] &&
+                !empty($stripeResult['checkout_url'])
+            ) {
 
-            $name =
-                $_SESSION['user']['name']
-                ?? $reservation['customer_name']
-                ?? 'Guest';
+                header(
+                    'Location: ' .
+                    $stripeResult['checkout_url']
+                );
 
-            if (empty($email)) {
-
-                $message =
-                    'Your account does not have an email address.';
-
-                $messageType = 'error';
-
-            } else {
-
-                $otpResult =
-                    $otpController->sendPaymentOtp(
-                        $userId,
-                        $reservationId,
-                        $email,
-                        $name
-                    );
-
-                if ($otpResult['success']) {
-
-                    /*
-                     * Store reservation temporarily
-                     * for OTP verification.
-                     */
-                    $_SESSION['otp_reservation_id'] =
-                        $reservationId;
-
-                    header(
-                        'Location: verify-otp.php'
-                    );
-
-                    exit;
-
-                } else {
-
-                    $message =
-                        $otpResult['message'];
-
-                    $messageType = 'error';
-                }
+                exit;
             }
+
+            $message =
+                $stripeResult['message']
+                ?? 'Unable to start payment.';
+
+            $messageType = 'error';
         }
     }
 }
@@ -203,6 +170,10 @@ try {
     href="/public/css/style.css"
 >
 
+<link
+    rel="stylesheet"
+    href="/public/css/customer.css"
+>
 <style>
 
     .payment-message {
@@ -284,7 +255,7 @@ try {
 
 </head>
 
-<body>
+<body class="customer-ui">
 
 <header>
 
@@ -297,7 +268,8 @@ try {
                 text-decoration: none;
             "
         >
-            🛏 LuxeStay
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
         </a>
 
     </div>
@@ -321,7 +293,7 @@ try {
         </a>
 
         <a href="/views/notifications/index.php">
-            Notifications
+            Notifications<?php require __DIR__ . '/../partials/notification-badge.php'; ?>
         </a>
 
         <a href="/views/customers/profile.php">
@@ -349,7 +321,7 @@ try {
     </h1>
 
     <p>
-        Verify your payment securely using an OTP sent to your registered email.
+        Complete your payment securely through Stripe.
     </p>
 
 </section>
@@ -557,7 +529,7 @@ try {
                                 <input
                                     type="hidden"
                                     name="action"
-                                    value="send_otp"
+                                    value="start_payment"
                                 >
 
                                 <input

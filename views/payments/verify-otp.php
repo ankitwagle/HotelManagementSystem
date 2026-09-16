@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../controllers/OtpController.php';
 require_once __DIR__ . '/../../controllers/PaymentController.php';
+require_once __DIR__ . '/../../controllers/StripeController.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -26,13 +27,6 @@ $paymentController = new PaymentController();
 
 $message = '';
 $messageType = '';
-
-
-/*
-|--------------------------------------------------------------------------
-| VERIFY OTP
-|--------------------------------------------------------------------------
-*/
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -68,56 +62,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             /*
              * OTP VERIFIED
              *
-             * For the current project demo, we now
-             * complete the payment after successful
-             * OTP verification.
+             * Get the confirmed reservation,
+             * then create a Stripe Checkout Session.
              */
 
-            $result =
-                $paymentController->processPayment(
+            $reservationResult =
+                $paymentController->getReservationForPayment(
                     $reservationId,
                     $userId
                 );
 
-            if ($result['success']) {
+            if (!$reservationResult['success']) {
 
-                unset(
-                    $_SESSION['otp_reservation_id']
-                );
+                $message =
+                    $reservationResult['message']
+                    ?? 'Reservation is not available for payment.';
 
-                header(
-                    'Location: receipt.php?payment_id=' .
-                    (int)$result['id']
-                );
-
-                exit;
+                $messageType = 'error';
 
             } else {
 
-                $message =
-                    $result['message']
-                    ?? 'Payment could not be completed.';
+                try {
 
-                $messageType = 'error';
+                    $stripeController =
+                        new StripeController();
+
+                    $stripeResult =
+                        $stripeController->createCheckoutSession(
+                            $reservationResult['reservation'],
+                            $userId
+                        );
+
+                    if (
+                        $stripeResult['success'] &&
+                        !empty($stripeResult['checkout_url'])
+                    ) {
+
+                        unset(
+                            $_SESSION['otp_reservation_id']
+                        );
+
+                        header(
+                            'Location: ' .
+                            $stripeResult['checkout_url']
+                        );
+
+                        exit;
+
+                    } else {
+
+                        $message =
+                            $stripeResult['message']
+                            ?? 'Unable to start Stripe payment.';
+
+                        $messageType = 'error';
+                    }
+
+                } catch (Exception $e) {
+
+                    $message =
+                        'Unable to start payment. Please try again.';
+
+                    $messageType = 'error';
+                }
             }
         }
     }
 }
 
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
-
 <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
 >
-
 <title>
     Verify Payment | <?= htmlspecialchars(APP_NAME) ?>
 </title>
@@ -127,8 +148,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     href="/public/css/style.css"
 >
 
+<link
+    rel="stylesheet"
+    href="/public/css/customer.css"
+>
 <style>
-
 .otp-container {
     max-width: 600px;
     margin: 70px auto;
@@ -200,12 +224,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     font-weight: 700;
     text-decoration: none;
 }
-
 </style>
-
 </head>
 
-<body>
+<body class="customer-ui">
 
 <header>
 
@@ -218,16 +240,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 text-decoration: none;
             "
         >
-            🛏 LuxeStay
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
         </a>
 
     </div>
 
     <nav>
 
-        <a href="/index.php">
-            Home
-        </a>
+        <a href="/index.php">Home</a>
 
         <a href="/views/rooms/index.php">
             Rooms
@@ -242,7 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </a>
 
         <a href="/views/notifications/index.php">
-            Notifications
+            Notifications<?php require __DIR__ . '/../partials/notification-badge.php'; ?>
         </a>
 
         <a href="/views/customers/profile.php">
@@ -257,7 +278,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </header>
 
-
 <main class="otp-container">
 
 <section class="otp-card">
@@ -271,27 +291,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </h1>
 
     <p>
-        A 6-digit verification code has been sent
-        to your registered email address.
+        A 6-digit verification code has been
+        sent to your registered email address.
     </p>
 
     <p>
         Enter the code below to continue.
     </p>
 
-
     <?php if ($message !== ''): ?>
 
         <div
-            class="otp-message <?= htmlspecialchars($messageType) ?>"
+            class="otp-message
+            <?= htmlspecialchars($messageType) ?>"
         >
-
             <?= htmlspecialchars($message) ?>
-
         </div>
 
     <?php endif; ?>
-
 
     <form method="POST">
 
@@ -312,11 +329,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             type="submit"
             class="verify-button"
         >
-            Verify OTP & Complete Payment
+            Verify OTP & Continue to Stripe
         </button>
 
     </form>
-
 
     <a
         href="/views/payments/index.php"
@@ -329,14 +345,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </main>
 
-
 <footer>
 
 <div>
 
-    <strong>
-        LuxeStay
-    </strong>
+    <strong>LuxeStay</strong>
 
     <p>
         Secure hotel reservation payments.
@@ -347,5 +360,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </footer>
 
 </body>
-
 </html>

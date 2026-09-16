@@ -123,6 +123,11 @@ unset($room);
         href="/public/css/style.css"
     >
 
+    <link
+        rel="stylesheet"
+        href="/public/css/admin.css"
+    >
+
     <style>
 
         .admin-page {
@@ -264,7 +269,7 @@ unset($room);
 
 </head>
 
-<body>
+<body class="admin-ui">
 
 <header>
 
@@ -274,7 +279,8 @@ unset($room);
             href="/index.php"
             style="color:inherit;text-decoration:none;"
         >
-            🛏 LuxeStay
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
         </a>
 
     </div>
@@ -317,7 +323,7 @@ unset($room);
             Profile
         </a>
 
-        <a href="/logout.php">
+        <a class="nav-cta" href="/logout.php">
             Logout
         </a>
 

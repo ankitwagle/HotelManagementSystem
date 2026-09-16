@@ -7,6 +7,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+requireAdmin();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $reservationId = (int) ($_POST['reservation_id'] ?? 0);
@@ -25,6 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'confirmed'
         );
 
+        $_SESSION['reservation_message'] = $result['message'];
+
+    } elseif ($action === 'approve_cancellation') {
+
+        $result = $controller->approveCancellation($reservationId);
         $_SESSION['reservation_message'] = $result['message'];
 
     } elseif ($action === 'cancel') {
@@ -91,6 +98,11 @@ unset($_SESSION['reservation_message']);
 <link
     rel="stylesheet"
     href="../../public/css/style.css"
+>
+
+<link
+    rel="stylesheet"
+    href="../../public/css/admin.css"
 >
 
 <style>
@@ -253,6 +265,11 @@ unset($_SESSION['reservation_message']);
         color: #842029;
     }
 
+    .status-cancel_requested {
+        background: #fff3cd;
+        color: #856404;
+    }
+
     .status-completed {
         background: #cfe2ff;
         color: #084298;
@@ -335,7 +352,7 @@ unset($_SESSION['reservation_message']);
 
 </head>
 
-<body>
+<body class="admin-ui">
 
 <header>
 
@@ -348,7 +365,8 @@ unset($_SESSION['reservation_message']);
                 text-decoration: none;
             "
         >
-            🛏 LuxeStay
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
         </a>
 
     </div>
@@ -391,7 +409,7 @@ unset($_SESSION['reservation_message']);
             Profile
         </a>
 
-        <a href="/logout.php">
+        <a class="nav-cta" href="/logout.php">
             Logout
         </a>
 
@@ -670,6 +688,20 @@ unset($_SESSION['reservation_message']);
                                 <span class="action-complete">
                                     Confirmed
                                 </span>
+
+                            <?php elseif ($status === 'cancel_requested'): ?>
+
+                                <form
+                                    method="POST"
+                                    action="reservations.php"
+                                    onsubmit="return confirm('Approve this cancellation and process any Stripe refund?');"
+                                >
+                                    <input type="hidden" name="reservation_id" value="<?= (int) $reservation['id'] ?>">
+                                    <input type="hidden" name="action" value="approve_cancellation">
+                                    <button type="submit" class="btn btn-cancel">
+                                        Approve Cancellation
+                                    </button>
+                                </form>
 
                             <?php elseif ($status === 'cancelled'): ?>
 

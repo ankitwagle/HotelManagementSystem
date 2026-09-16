@@ -250,6 +250,11 @@ $customers = $customerStmt->fetchAll(PDO::FETCH_ASSOC);
     href="/public/css/style.css"
 >
 
+<link
+    rel="stylesheet"
+    href="/public/css/admin.css"
+>
+
 <style>
 
     .admin-page {
@@ -474,7 +479,7 @@ $customers = $customerStmt->fetchAll(PDO::FETCH_ASSOC);
 
 </head>
 
-<body>
+<body class="admin-ui">
 
 <header>
 
@@ -487,7 +492,8 @@ $customers = $customerStmt->fetchAll(PDO::FETCH_ASSOC);
                 text-decoration: none;
             "
         >
-            🛏 LuxeStay
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
         </a>
 
     </div>
@@ -530,7 +536,7 @@ $customers = $customerStmt->fetchAll(PDO::FETCH_ASSOC);
             Profile
         </a>
 
-        <a href="/logout.php">
+        <a class="nav-cta" href="/logout.php">
             Logout
         </a>
 

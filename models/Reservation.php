@@ -37,7 +37,7 @@ class Reservation
                   SELECT 1
                   FROM reservations r
                   WHERE r.room_id = rm.id
-                    AND r.status IN ('pending', 'confirmed')
+                    AND r.status IN ('pending', 'confirmed', 'cancel_requested')
                     AND r.check_in < ?
                     AND r.check_out > ?
               )
@@ -70,7 +70,7 @@ class Reservation
             SELECT COUNT(*)
             FROM reservations
             WHERE room_id = ?
-              AND status IN ('pending', 'confirmed')
+              AND status IN ('pending', 'confirmed', 'cancel_requested')
               AND check_in < ?
               AND check_out > ?
         ");
@@ -177,19 +177,19 @@ class Reservation
 
 
     /**
-     * Cancel a customer's pending reservation.
+     * Request cancellation for a customer's pending or confirmed reservation.
      */
-    public function cancel(
+    public function requestCancellation(
         int $reservationId,
         int $userId
     ): bool {
 
         $stmt = $this->db->prepare("
             UPDATE reservations
-            SET status = 'cancelled'
+            SET status = 'cancel_requested'
             WHERE id = ?
               AND user_id = ?
-              AND status = 'pending'
+              AND status IN ('pending', 'confirmed')
         ");
 
         $stmt->execute([
@@ -198,6 +198,24 @@ class Reservation
         ]);
 
         return $stmt->rowCount() > 0;
+    }
+
+    public function getById(int $reservationId): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT
+                r.*,
+                u.name AS customer_name,
+                u.email AS customer_email
+            FROM reservations r
+            INNER JOIN users u ON u.id = r.user_id
+            WHERE r.id = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$reservationId]);
+        $reservation = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $reservation ?: null;
     }
 
 
@@ -296,6 +314,7 @@ class Reservation
         $allowedStatuses = [
             'pending',
             'confirmed',
+            'cancel_requested',
             'cancelled'
         ];
 

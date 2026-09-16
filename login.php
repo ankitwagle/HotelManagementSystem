@@ -3,6 +3,7 @@
 
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/controllers/AuthController.php';
+require_once __DIR__ . '/controllers/OtpController.php';
 
 
 // --------------------------------------------------
@@ -34,6 +35,8 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    unset($_SESSION['pending_login_user']);
+
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
@@ -58,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $controller = new AuthController();
 
-        $result = $controller->login(
+        $result = $controller->authenticateCredentials(
             $email,
             $password
         );
@@ -70,14 +73,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($result['success']) {
 
-            if (($_SESSION['user']['role'] ?? '') === 'admin') {
+            $pendingUser = $result['user'];
 
-                header('Location: /index.php');
+            $otpResult = (new OtpController())->sendLoginOtp(
+                (int) $pendingUser['id'],
+                $pendingUser['email'],
+                $pendingUser['name']
+            );
+
+            if ($otpResult['success']) {
+
+                $_SESSION['pending_login_user'] = $pendingUser;
+
+                header('Location: /views/auth/verify-otp.php');
                 exit;
             }
 
-            header('Location: /index.php');
-            exit;
+            $error = $otpResult['message'];
         }
 
 

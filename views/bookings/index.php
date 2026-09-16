@@ -36,10 +36,14 @@ $reservations = $reservationModel->getUserReservations($userId);
     href="/public/css/style.css"
 >
 
+<link
+    rel="stylesheet"
+    href="/public/css/customer.css"
+>
 
 </head>
 
-<body>
+<body class="customer-ui">
 
 <header>
 
@@ -52,7 +56,8 @@ $reservations = $reservationModel->getUserReservations($userId);
                 text-decoration: none;
             "
         >
-            🛏 LuxeStay
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
         </a>
 
     </div>
@@ -76,7 +81,7 @@ $reservations = $reservationModel->getUserReservations($userId);
         </a>
 
         <a href="/views/notifications/index.php">
-            Notifications
+            Notifications<?php require __DIR__ . '/../partials/notification-badge.php'; ?>
         </a>
 
         <a href="/views/customers/profile.php">
@@ -206,10 +211,20 @@ $reservations = $reservationModel->getUserReservations($userId);
                             Status:
                         </strong>
 
-                        <?= htmlspecialchars(
-                            ucfirst($reservation['status'] ?? 'pending')
-                        ) ?>
+                        <?php
+                        $status = $reservation['status'] ?? 'pending';
+                        $statusLabel = $status === 'cancel_requested'
+                            ? 'Cancellation Requested'
+                            : ($status === 'cancelled' ? 'Cancelled' : ucfirst($status));
+                        ?>
+                        <?= htmlspecialchars($statusLabel) ?>
                     </p>
+
+                    <a
+                        href="/views/bookings/cancel.php?id=<?= (int) $reservation['id'] ?>"
+                    >
+                        View Reservation Details →
+                    </a>
 
                     <p>
                         <strong>

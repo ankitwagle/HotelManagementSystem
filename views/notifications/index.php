@@ -2,6 +2,8 @@
 
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../controllers/NotificationController.php';
+require_once __DIR__ . '/../../models/Reservation.php';
+require_once __DIR__ . '/../../models/Payment.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -66,6 +68,9 @@ $unreadCount =
         $userId
     );
 
+$reservationModel = new Reservation();
+$paymentModel = new Payment();
+
 ?>
 
 <!DOCTYPE html>
@@ -91,6 +96,10 @@ $unreadCount =
     href="/public/css/style.css"
 >
 
+<link
+    rel="stylesheet"
+    href="/public/css/customer.css"
+>
 <style>
 
     .notifications-page {
@@ -238,7 +247,7 @@ $unreadCount =
 
 </head>
 
-<body>
+<body class="customer-ui">
 <header>
 
     <div class="logo">
@@ -250,7 +259,8 @@ $unreadCount =
                 text-decoration: none;
             "
         >
-            🛏 LuxeStay
+            <span class="logo-icon">✦</span>
+            Luxe<span>Stay</span>
         </a>
 
     </div>
@@ -291,7 +301,7 @@ $unreadCount =
             </a>
 
             <a href="/views/notifications/index.php">
-                Notifications
+                Notifications<?php require __DIR__ . '/../partials/notification-badge.php'; ?>
             </a>
 
             <a href="/views/customers/profile.php">
@@ -313,7 +323,7 @@ $unreadCount =
             </a>
 
             <a href="/views/notifications/index.php">
-                Notifications
+                Notifications<?php require __DIR__ . '/../partials/notification-badge.php'; ?>
             </a>
 
             <a href="/views/customers/profile.php">
@@ -393,6 +403,31 @@ $unreadCount =
             <?php
             $isUnread =
                 (int) ($notification['is_read'] ?? 0) === 0;
+            $relatedReservation = null;
+            if (preg_match(
+                '/reservation\s*#(\d+)/i',
+                (string) $notification['message'],
+                $matches
+            )) {
+                $candidateReservation = $reservationModel->getById(
+                    (int) $matches[1]
+                );
+                if ($candidateReservation
+                    && (int) $candidateReservation['user_id'] === $userId) {
+                    $relatedReservation = $candidateReservation;
+                }
+            }
+            $relatedPayment = $relatedReservation
+                ? $paymentModel->getPaymentByReservation(
+                    (int) $relatedReservation['id']
+                )
+                : null;
+            $paymentStatus = strtolower(trim((string) (
+                $relatedPayment['status'] ?? ''
+            )));
+            $isPaymentReady = $relatedReservation
+                && $relatedReservation['status'] === 'confirmed'
+                && !in_array($paymentStatus, ['paid', 'refunded'], true);
             ?>
 
             <article
@@ -441,6 +476,44 @@ $unreadCount =
                     ) ?>
 
                 </p>
+
+                <?php if ($relatedReservation): ?>
+
+                    <div class="notification-actions">
+
+                        <?php if ($isPaymentReady): ?>
+
+                            <form
+                                method="POST"
+                                action="/views/payments/index.php"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="start_payment"
+                                >
+                                <input
+                                    type="hidden"
+                                    name="reservation_id"
+                                    value="<?= (int) $relatedReservation['id'] ?>"
+                                >
+                                <button type="submit" class="notification-action primary">
+                                    Move to Payment
+                                </button>
+                            </form>
+
+                        <?php endif; ?>
+
+                        <a
+                            class="notification-action"
+                            href="/views/bookings/cancel.php?id=<?= (int) $relatedReservation['id'] ?>"
+                        >
+                            View Reservation
+                        </a>
+
+                    </div>
+
+                <?php endif; ?>
 
                 <?php if ($isUnread): ?>
 

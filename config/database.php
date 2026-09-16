@@ -9,7 +9,7 @@ class Database
         if (self::$connection === null) {
 
             $host = "localhost";
-            $database = "hotel_management";
+            $database = "hotel_management_new";
             $username = "root";
             $password = "";
 

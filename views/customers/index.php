@@ -227,6 +227,10 @@ try {
     href="/public/css/style.css"
 >
 
+<link
+    rel="stylesheet"
+    href="/public/css/customer.css"
+>
 <style>
 
     .customer-dashboard {
@@ -417,7 +421,7 @@ try {
 
 </head>
 
-<body>
+<body class="customer-ui">
 
 <header>
 
@@ -427,7 +431,8 @@ try {
         href="/index.php"
         style="text-decoration:none;color:inherit;"
     >
-        🛏 LuxeStay
+        <span class="logo-icon">✦</span>
+        Luxe<span>Stay</span>
     </a>
 </div>
 
@@ -445,15 +450,8 @@ try {
         Profile
     </a>
 
-    <a href="/views/customer/notifications.php">
-        🔔 Notifications
-
-        <?php if ($unreadNotifications > 0): ?>
-
-            (<?= $unreadNotifications ?>)
-
-        <?php endif; ?>
-
+    <a href="/views/notifications/index.php">
+        Notifications<?php require __DIR__ . '/../partials/notification-badge.php'; ?>
     </a>
 
     <a href="/logout.php">
@@ -558,7 +556,7 @@ try {
             Unread notifications.
         </p>
 
-        <a href="/views/customer/notifications.php">
+        <a href="/views/notifications/index.php">
             View Notifications →
         </a>
 
@@ -698,9 +696,9 @@ try {
 
         <a
             class="action-button green"
-            href="/views/customer/notifications.php"
+            href="/views/notifications/index.php"
         >
-            Notifications
+            Notifications<?php require __DIR__ . '/../partials/notification-badge.php'; ?>
         </a>
 
     </div>

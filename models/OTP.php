@@ -15,22 +15,28 @@ class Otp
 
     public function createOtp(
         int $userId,
-        int $reservationId,
+        ?int $reservationId,
         string $otpCode
     ): bool {
 
-        // Remove previous unused OTPs for this reservation.
+        $reservationCondition = $reservationId === null
+            ? 'reservation_id IS NULL'
+            : 'reservation_id = ?';
+
         $deleteStmt = $this->db->prepare("
             DELETE FROM otps
             WHERE user_id = ?
-              AND reservation_id = ?
+              AND {$reservationCondition}
               AND is_used = 0
         ");
 
-        $deleteStmt->execute([
-            $userId,
-            $reservationId
-        ]);
+        $deleteParams = [$userId];
+
+        if ($reservationId !== null) {
+            $deleteParams[] = $reservationId;
+        }
+
+        $deleteStmt->execute($deleteParams);
 
         // Hash the OTP before storing it.
         $otpHash = password_hash(
@@ -41,6 +47,10 @@ class Otp
         if ($otpHash === false) {
             return false;
         }
+
+        $reservationValue = $reservationId === null
+            ? 'NULL'
+            : '?';
 
         // Create a new OTP valid for 30 seconds.
         $stmt = $this->db->prepare("
@@ -57,7 +67,7 @@ class Otp
             VALUES
             (
                 ?,
-                ?,
+                {$reservationValue},
                 ?,
                 DATE_ADD(NOW(), INTERVAL 30 SECOND),
                 0,
@@ -66,19 +76,27 @@ class Otp
             )
         ");
 
-        return $stmt->execute([
-            $userId,
-            $reservationId,
-            $otpHash
-        ]);
+        $insertParams = [$userId];
+
+        if ($reservationId !== null) {
+            $insertParams[] = $reservationId;
+        }
+
+        $insertParams[] = $otpHash;
+
+        return $stmt->execute($insertParams);
     }
 
 
     public function verifyOtp(
         int $userId,
-        int $reservationId,
+        ?int $reservationId,
         string $otpCode
     ): bool {
+
+        $reservationCondition = $reservationId === null
+            ? 'reservation_id IS NULL'
+            : 'reservation_id = ?';
 
         $stmt = $this->db->prepare("
             SELECT
@@ -87,17 +105,20 @@ class Otp
                 attempts
             FROM otps
             WHERE user_id = ?
-              AND reservation_id = ?
+                            AND {$reservationCondition}
               AND is_used = 0
               AND expires_at > NOW()
             ORDER BY id DESC
             LIMIT 1
         ");
 
-        $stmt->execute([
-            $userId,
-            $reservationId
-        ]);
+        $verifyParams = [$userId];
+
+        if ($reservationId !== null) {
+            $verifyParams[] = $reservationId;
+        }
+
+        $stmt->execute($verifyParams);
 
         $otp = $stmt->fetch(PDO::FETCH_ASSOC);
 
