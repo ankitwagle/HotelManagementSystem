@@ -37,6 +37,16 @@
             Sign in to manage your LuxeStay account.
         </p>
 
+        <?php
+        $success = $_SESSION['auth_success_message'] ?? '';
+        unset($_SESSION['auth_success_message']);
+        ?>
+
+        <?php if ($success !== ''): ?>
+            <div class="success">
+                <?= htmlspecialchars($success) ?>
+            </div>
+        <?php endif; ?>
 
         <?php if (!empty($error)): ?>
 
@@ -105,6 +115,12 @@
             </button>
 
         </form>
+
+        <p class="bottom-link">
+            <a href="/views/auth/forgot-password.php">
+                Forgot Password?
+            </a>
+        </p>
 
 
         <!-- REGISTER -->

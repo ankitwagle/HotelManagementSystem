@@ -53,6 +53,22 @@ class User
         return $user ?: null;
     }
 
+    public function updatePassword(
+        int $userId,
+        string $hashedPassword
+    ): bool {
+        $stmt = $this->db->prepare("
+            UPDATE users
+            SET password = ?
+            WHERE id = ?
+        ");
+
+        return $stmt->execute([
+            $hashedPassword,
+            $userId
+        ]);
+    }
+
     /**
      * Get all administrators.
      *
